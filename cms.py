@@ -242,16 +242,14 @@ class IconCMS(QWidget):
         # Tab 4: Icon generator
         self._build_generator_tab()
 
-        # Tab 5: Spec Reference — sketch_tools.txt integrated (with sub-tabs for model/make)
-        self._build_spec_tab()
-
-        # Tabs 6-7: Model & Make specs as standalone HTML pages
+        # Tabs 5-7: Spec reference tabs — all three specs as QTextBrowser HTML pages
+        self._build_sketch_spec_tab()
         self._build_model_spec_tab()
         self._build_make_spec_tab()
 
         self._refresh_all()
 
-        # Default to Spec Reference tab so user sees the Constraints reference first
+        # Default to Sketch Spec tab so user sees tools reference first
         self.tabs.setCurrentIndex(4)
 
     def _load_icons(self):
@@ -684,66 +682,40 @@ class IconCMS(QWidget):
         "Rectangular Pattern": 19, "Circular Pattern": 19,
     }
 
-    def _build_spec_tab(self):
-        """Tab 5: Spec Reference — render sketch_tools.txt categories with icon previews"""
+    def _build_sketch_spec_tab(self):
+        """Tab 5: Sketch tools spec as HTML reference with unique ref IDs"""
         tab = QWidget()
         layout = QVBoxLayout(tab)
         layout.setContentsMargins(8, 8, 8, 8)
-        layout.setSpacing(6)
 
-        # ── Header ──
         hdr = QHBoxLayout()
         title = QLabel("<b>Sketch Tools Spec</b>  "
                        "<span style='color:#4a4d57;font-size:11px'>sketch_tools.txt</span>")
         title.setStyleSheet("font-size: 16px; color: #c1c3c8;")
         hdr.addWidget(title)
         hdr.addStretch()
-
-        # Filter
-        self.spec_filter = QLineEdit()
-        self.spec_filter.setPlaceholderText("Filter tools...")
-        self.spec_filter.setFixedWidth(200)
-        self.spec_filter.textChanged.connect(self._refresh_spec)
-        hdr.addWidget(self.spec_filter)
-
-        self.spec_count = QLabel("")
-        self.spec_count.setStyleSheet("color: #6b6e78; font-size: 11px;")
-        hdr.addWidget(self.spec_count)
         layout.addLayout(hdr)
 
-        # Legend
-        leg = QHBoxLayout()
-        leg.setSpacing(16)
-        leg.addWidget(self._spec_legend_dot("#2e7d32", "Implemented"))
-        leg.addWidget(self._spec_legend_dot("#6b6e78", "Not yet implemented"))
-        leg.addWidget(self._spec_legend_dot("#4a4d57", "No icon assigned"))
-        leg.addStretch()
+        viewer = QTextBrowser()
+        viewer.setOpenExternalLinks(True)
+        viewer.setStyleSheet("""
+            QTextBrowser {
+                background-color: #0d1117;
+                color: #c9d1d9;
+                border: none;
+                font-family: 'Inter', 'Segoe UI', sans-serif;
+                font-size: 14px;
+            }
+        """)
+        html_path = os.path.join(os.path.dirname(__file__), "refs", "sketch_spec.html")
+        if os.path.exists(html_path):
+            with open(html_path) as f:
+                viewer.setHtml(f.read())
+        else:
+            viewer.setPlainText("sketch_spec.html not found in refs/")
+        layout.addWidget(viewer, 1)
 
-        # Status color key
-        for txt, color in [("Fully Constrained", "black"), ("Under-constrained", "#4fc3f7")]:
-            lbl = QLabel(f'<span style="color:{color}">●</span> {txt}')
-            lbl.setStyleSheet("color: #6b6e78; font-size: 10px;")
-            leg.addWidget(lbl)
-        self.spec_legend_shortcuts = QLabel("")
-        self.spec_legend_shortcuts.setStyleSheet("color: #4a4d57; font-size: 10px;")
-        leg.addWidget(self.spec_legend_shortcuts)
-        layout.addLayout(leg)
-
-        # ── Scrollable spec content ──
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QFrame.NoFrame)
-        self.spec_container = QWidget()
-        self.spec_container_layout = QVBoxLayout(self.spec_container)
-        self.spec_container_layout.setSpacing(8)
-        scroll.setWidget(self.spec_container)
-        layout.addWidget(scroll, 1)
-
-        self.tabs.addTab(tab, "Spec Reference")
-
-    def _spec_legend_dot(self, color, text):
-        return QLabel(f'<span style="color:{color};font-size:14px">●</span>'
-                      f' <span style="color:#6b6e78;font-size:10px">{text}</span>')
+        self.tabs.addTab(tab, "Sketch Spec")
 
     def _build_model_spec_tab(self):
         """Tab 6: Model (Plastic) spec as HTML reference"""
@@ -968,8 +940,6 @@ class IconCMS(QWidget):
         self._refresh_browse()
         self._refresh_stage()
         self._populate_editor_list()
-        if hasattr(self, 'spec_container_layout'):
-            self._refresh_spec()
 
     def _refresh_browse(self):
         """Rebuild the browse tab icon grid with filtering"""
@@ -1289,11 +1259,9 @@ class IconCMS(QWidget):
         self._apply_theme()
         # Rebuild all icon previews for the new theme
         self._refresh_all()
-        # Force rebuild the stage mapping and spec reference lists
+        # Force rebuild the stage mapping list
         if hasattr(self, 'stage_combo'):
             self._refresh_stage()
-        if hasattr(self, 'spec_container_layout'):
-            self._refresh_spec()
 
     def _generate_template(self, template):
         """Generate icon from template and switch to generator tab"""
