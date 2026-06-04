@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FissionCAD - Sketch Tools Specification</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #0d1117; color: #c9d1d9; line-height: 1.6; padding: 40px 20px;
+  }
+  .container { max-width: 920px; margin: 0 auto; }
+  h1 { font-size: 28px; font-weight: 700; color: #f0f6fc; margin-bottom: 4px; }
+  .subtitle { color: #8b949e; font-size: 14px; margin-bottom: 32px; }
+  h2 {
+    font-size: 20px; font-weight: 600; color: #58a6ff;
+    margin-top: 40px; margin-bottom: 16px; padding-bottom: 8px;
+    border-bottom: 1px solid #21262d; display: flex; align-items: center; gap: 8px;
+  }
+  h2 .badge { font-size: 12px; background: #1f6feb33; color: #58a6ff; padding: 2px 8px; border-radius: 10px; }
+  h3 { font-size: 16px; font-weight: 600; color: #f0f6fc; margin-top: 24px; margin-bottom: 10px; }
+  table {
+    width: 100%; border-collapse: collapse; margin: 12px 0;
+    font-size: 14px;
+  }
+  thead th {
+    background: #161b22; color: #8b949e; font-weight: 600; text-align: left;
+    padding: 10px 12px; border-bottom: 2px solid #30363d;
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  tbody td {
+    padding: 10px 12px; border-bottom: 1px solid #21262d; vertical-align: top;
+  }
+  tbody tr:hover { background: #161b22; }
+  .tag { display: inline-block; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 500; }
+  .tag-key { background: #1f6feb33; color: #58a6ff; }
+  .tag-feat { background: #23863633; color: #3fb950; }
+  .tag-info { background: #1f6feb22; color: #79c0ff; }
+  .tag-status { background: #d2992233; color: #d29922; }
+  .hr { border: none; border-top: 1px solid #21262d; margin: 32px 0; }
+  .note {
+    background: #161b22; border-left: 3px solid #58a6ff;
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+    font-size: 14px; color: #8b949e;
+  }
+  .note strong { color: #c9d1d9; }
+  pre {
+    background: #161b22; border: 1px solid #30363d; border-radius: 6px;
+    padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 13px;
+    overflow-x: auto; line-height: 1.5; color: #c9d1d9; margin: 16px 0;
+  }
+  .shortcut-grid { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+  .shortcut-item {
+    background: #161b22; border: 1px solid #30363d; border-radius: 6px;
+    padding: 6px 12px; font-size: 13px; display: flex; align-items: center; gap: 8px;
+  }
+  kbd {
+    background: #21262d; border: 1px solid #30363d; border-radius: 4px;
+    padding: 2px 6px; font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    color: #f0f6fc; box-shadow: 0 1px 0 #30363d;
+  }
+  .color-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; }
+  .color-blue { background: #58a6ff; }
+  .color-black { background: #c9d1d9; }
+  .footer { text-align: center; color: #484f58; font-size: 13px; margin-top: 48px; padding-top: 16px; border-top: 1px solid #21262d; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Sketch Tools Specification</h1>
+  <p class="subtitle">FissionCAD — Fusion 360-aligned 2D sketch environment</p>
+
+  <div class="hr"></div>
+
+  <!-- 2. Sketch Creation & Environment Setup -->
+  <h2><span>📐</span> Sketch Creation &amp; Environment Setup</h2>
+  <table>
+    <thead>
+      <tr><th>Tool</th><th>Function</th><th>Activation</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Create Sketch</strong></td><td>Creates a new 2D sketch on a selected plane or face</td><td>Toolbar → Create Sketch or right-click → Create Sketch</td></tr>
+      <tr><td><strong>Finish Sketch</strong></td><td>Exits sketch environment and saves changes</td><td>Toolbar → Finish Sketch</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <strong>Environment Notes:</strong><br>
+    <span class="color-swatch color-blue"></span> Blue geometry = <strong>Under-defined</strong> (missing constraints/dimensions)<br>
+    <span class="color-swatch color-black"></span> Black geometry = <strong>Fully defined</strong><br>
+    Use <kbd>S</kbd> to open shortcut menu for quick tool access
+  </div>
+
+  <!-- 3. Create Tools -->
+  <h2><span>✏️</span> Create Tools <span class="badge">Geometry Generation</span></h2>
+
+  <h3>3.1 Basic Geometry</h3>
+  <table>
+    <thead>
+      <tr><th>Tool</th><th>Function</th><th>Key Parameters</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Line</strong></td><td>Creates straight line segments</td><td>Start point, end point, length</td></tr>
+      <tr><td><strong>Circle</strong></td><td>Center-diameter or 2-point circle</td><td>Center point, radius/diameter</td></tr>
+      <tr><td><strong>Arc</strong></td><td>3-point, center-point, or tangent arc</td><td>Start, end, radius/center</td></tr>
+      <tr><td><strong>Rectangle</strong></td><td>2-point, 3-point, center, or centered rectangle</td><td>Corner points, dimensions</td></tr>
+      <tr><td><strong>Polygon</strong></td><td>Regular polygon (3–64 sides)</td><td>Center, radius, side count, rotation angle</td></tr>
+      <tr><td><strong>Ellipse</strong></td><td>Oval shape</td><td>Center, major radius, minor radius, rotation angle</td></tr>
+      <tr><td><strong>Slot</strong></td><td>Rounded rectangle/oblong hole</td><td>Center, length, width, rotation, type</td></tr>
+      <tr><td><strong>Spline</strong></td><td>Smooth curve through control points</td><td>Array of points, closed/open option</td></tr>
+      <tr><td><strong>Point</strong></td><td>Construction reference point</td><td>X, Y coordinates</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.2 Text Tool</h3>
+  <table>
+    <thead>
+      <tr><th>Tool</th><th>Function</th><th>Parameters</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Text</strong></td><td>Adds text for engraving/embossing</td><td>Content, position, height, font, bold/italic</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <strong>Shortcut Keys:</strong>
+    <kbd>C</kbd> Circle &nbsp;·&nbsp; <kbd>L</kbd> Line &nbsp;·&nbsp; <kbd>X</kbd> Construction toggle &nbsp;·&nbsp; <kbd>P</kbd> Project
+  </div>
+
+  <!-- 4. Modify Tools -->
+  <h2><span>🔧</span> Modify Tools</h2>
+  <table>
+    <thead>
+      <tr><th>Tool</th><th>Function</th><th>Operation</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Trim</strong></td><td>Removes excess sketch lines up to intersection boundaries</td><td>Click segment to remove</td></tr>
+      <tr><td><strong>Extend</strong></td><td>Extends line to nearest boundary</td><td>Click line near end to extend</td></tr>
+      <tr><td><strong>Offset</strong></td><td>Creates parallel copy of geometry at specified distance</td><td>Select geometry, set distance, chain selection option</td></tr>
+      <tr><td><strong>Move/Copy</strong></td><td>Translates or rotates geometry</td><td>Select entities, specify displacement vector/angle</td></tr>
+      <tr><td><strong>Rotate</strong></td><td>Rotates geometry about point</td><td>Select entities, center point, angle</td></tr>
+      <tr><td><strong>Scale</strong></td><td>Resizes geometry about reference point</td><td>Select entities, base point, scale factor</td></tr>
+      <tr><td><strong>Fillet</strong></td><td>Rounds corners with specified radius</td><td>Select corner/intersection, radius value</td></tr>
+      <tr><td><strong>Chamfer</strong></td><td>Bevels corners with specified distances</td><td>Select corner, equal distance or two distances</td></tr>
+      <tr><td><strong>Break</strong></td><td>Splits geometry into segments at selected points</td><td>Select geometry, click split points</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <strong>Shortcut Keys:</strong>
+    <kbd>T</kbd> Trim &nbsp;·&nbsp; <kbd>M</kbd> Move &nbsp;·&nbsp; <kbd>Q</kbd> Extrude (exits sketch)
+  </div>
+
+  <!-- 5. Pattern Tools -->
+  <h2><span>🔁</span> Pattern Tools</h2>
+  <table>
+    <thead>
+      <tr><th>Tool</th><th>Function</th><th>Parameters</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Rectangular Pattern</strong></td><td>Creates array of copies in grid formation</td><td>X count, Y count, X spacing, Y spacing</td></tr>
+      <tr><td><strong>Circular Pattern</strong></td><td>Creates array of copies around center point</td><td>Center point, instance count, total angle</td></tr>
+      <tr><td><strong>Mirror</strong></td><td>Creates mirrored copy across symmetry line</td><td>Geometry to mirror, mirror line</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 6. Constraint Tools -->
+  <h2><span>🔒</span> Constraint Tools <span class="badge">Geometric Relationships</span></h2>
+  <div class="note">
+    Constraints enforce geometric relationships between sketch entities. These are <strong>rules</strong> — not dimensions — that control how geometry relates.
+  </div>
+  <table>
+    <thead>
+      <tr><th>Constraint</th><th>Icon</th><th>Function</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Coincident</strong></td><td>●</td><td>Forces two points to share the same location</td></tr>
+      <tr><td><strong>Horizontal</strong></td><td>↔</td><td>Forces line to be exactly horizontal</td></tr>
+      <tr><td><strong>Vertical</strong></td><td>↕</td><td>Forces line to be exactly vertical</td></tr>
+      <tr><td><strong>Parallel</strong></td><td>∥</td><td>Forces two lines to run in same direction</td></tr>
+      <tr><td><strong>Perpendicular</strong></td><td>⟂</td><td>Forces two lines to meet at 90°</td></tr>
+      <tr><td><strong>Tangent</strong></td><td>○—</td><td>Forces curve to touch another curve smoothly at one point</td></tr>
+      <tr><td><strong>Equal</strong></td><td>≡</td><td>Forces lengths or radii to be identical</td></tr>
+      <tr><td><strong>Concentric</strong></td><td>◎</td><td>Forces circles/arcs to share center point</td></tr>
+      <tr><td><strong>Collinear</strong></td><td>—</td><td>Forces lines to lie on same infinite line</td></tr>
+      <tr><td><strong>Fix</strong></td><td>📌</td><td>Locks entity position</td></tr>
+      <tr><td><strong>Midpoint</strong></td><td>◇</td><td>Forces point to midpoint of line</td></tr>
+      <tr><td><strong>Symmetric</strong></td><td>⇄</td><td>Forces symmetry across centerline</td></tr>
+      <tr><td><strong>Curvature</strong></td><td>()</td><td>Maintains curvature continuity between splines (G2)</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <strong>Constraint Status Colors:</strong><br>
+    <span class="color-swatch color-black"></span> <strong>Black</strong> = Fully constrained<br>
+    <span class="color-swatch color-blue"></span> <strong>Blue</strong> = Under-constrained (free to move)
+  </div>
+
+  <!-- 7. Dimension Tools -->
+  <h2><span>📏</span> Dimension Tools <span class="badge">Parametric Constraints</span></h2>
+  <div class="note">
+    Dimensions control exact size values and are parametric — they can be edited and drive model updates.
+  </div>
+  <table>
+    <thead>
+      <tr><th>Dimension Type</th><th>Function</th><th>Parameters</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Distance Dimension</strong></td><td>Linear distance between two points or line length</td><td>Value (mm), text position</td></tr>
+      <tr><td><strong>Radius Dimension</strong></td><td>Radius of arc or fillet</td><td>Value (mm)</td></tr>
+      <tr><td><strong>Diameter Dimension</strong></td><td>Diameter of circle</td><td>Value (mm)</td></tr>
+      <tr><td><strong>Angle Dimension</strong></td><td>Angle between two lines</td><td>Value (degrees)</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <strong>Best Practices:</strong><br>
+    • Name dimensions descriptively (e.g., <code>hole_offset = 0.1 * width</code>)<br>
+    • Use expressions to create relationships between parameters<br>
+    • Fully constrain sketches for predictable updates<br>
+    <strong>Shortcut Key:</strong> <kbd>D</kbd> = Dimension
+  </div>
+
+  <!-- 8. Construction & Reference Tools -->
+  <h2><span>📐</span> Construction &amp; Reference Tools</h2>
+  <table>
+    <thead>
+      <tr><th>Tool</th><th>Function</th><th>Visual Indicator</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Construction Geometry</strong></td><td>Creates reference geometry that doesn't form profiles</td><td>Dashed/dotted lines</td></tr>
+      <tr><td><strong>Centerline</strong></td><td>Creates axis geometry that participates in profiles</td><td>Dot-dash lines</td></tr>
+      <tr><td><strong>Project</strong></td><td>Projects 3D edges/faces onto current sketch plane</td><td>Projected geometry</td></tr>
+      <tr><td><strong>Project Cut Edges</strong></td><td>Projects intersection of plane with existing bodies</td><td>Intersection curves</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <strong>Construction vs. Centerline:</strong><br>
+    • <strong>Construction:</strong> Purely reference — does not affect profiles<br>
+    • <strong>Centerline:</strong> Acts as profile boundary, used for symmetry and revolve axes
+  </div>
+
+  <!-- 9. Inspection & Display -->
+  <h2><span>🔍</span> Inspection &amp; Display Tools</h2>
+  <table>
+    <thead>
+      <tr><th>Tool</th><th>Function</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Measure</strong></td><td>Measures distances between points, edges, or surfaces</td></tr>
+      <tr><td><strong>Sketch Palette</strong></td><td>Controls grids, snaps, profile display, and geometry type</td></tr>
+      <tr><td><strong>Profile Display</strong></td><td>Shows closed profiles with blue highlighting</td></tr>
+      <tr><td><strong>Points Display</strong></td><td>Shows all sketch points to identify gaps</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <strong>Grid &amp; Snap Options:</strong> Grid visibility, Snap to grid, Snap points
+  </div>
+
+  <!-- 10. Workflow Summary -->
+  <h2><span>📋</span> Workflow Summary</h2>
+  <pre>
+1. Create Sketch → Select Plane
+2. Create Geometry (Lines, Circles, etc.)
+3. Apply Constraints (Horizontal, Parallel, Tangent, etc.)
+4. Add Dimensions (Distance, Radius, Angle)
+5. Modify as Needed (Trim, Offset, Fillet, Pattern)
+6. Verify Geometry (Blue = Under-defined → Black = Fully defined)
+7. Finish Sketch
+8. Create 3D Feature (Extrude, Revolve, etc.)</pre>
+
+  <!-- 11. Common Shortcut Keys -->
+  <h2><span>⌨️</span> Common Shortcut Keys</h2>
+  <div class="shortcut-grid">
+    <div class="shortcut-item"><kbd>S</kbd> Tool Search / Shortcut Menu</div>
+    <div class="shortcut-item"><kbd>C</kbd> Circle</div>
+    <div class="shortcut-item"><kbd>L</kbd> Line</div>
+    <div class="shortcut-item"><kbd>D</kbd> Dimension</div>
+    <div class="shortcut-item"><kbd>T</kbd> Trim</div>
+    <div class="shortcut-item"><kbd>M</kbd> Move</div>
+    <div class="shortcut-item"><kbd>X</kbd> Construction Geometry</div>
+    <div class="shortcut-item"><kbd>P</kbd> Project</div>
+    <div class="shortcut-item"><kbd>Q</kbd> Extrude (exits sketch)</div>
+    <div class="shortcut-item"><kbd>F</kbd> Fillet</div>
+    <div class="shortcut-item"><kbd>Ctrl+Z</kbd> Undo</div>
+  </div>
+
+  <div class="footer">FissionCAD — Sketch Tools Specification &middot; (c) GnomeWorx 2026</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FissionCAD - 3D Printing Manufacturing Tools Specification</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #0d1117; color: #c9d1d9; line-height: 1.6; padding: 40px 20px;
+  }
+  .container { max-width: 920px; margin: 0 auto; }
+  h1 { font-size: 28px; font-weight: 700; color: #f0f6fc; margin-bottom: 4px; }
+  .subtitle { color: #8b949e; font-size: 14px; margin-bottom: 32px; }
+  h2 {
+    font-size: 20px; font-weight: 600; color: #58a6ff;
+    margin-top: 40px; margin-bottom: 16px; padding-bottom: 8px;
+    border-bottom: 1px solid #21262d; display: flex; align-items: center; gap: 8px;
+  }
+  h2 .badge { font-size: 12px; background: #1f6feb33; color: #58a6ff; padding: 2px 8px; border-radius: 10px; }
+  h3 { font-size: 16px; font-weight: 600; color: #f0f6fc; margin-top: 24px; margin-bottom: 10px; }
+  table {
+    width: 100%; border-collapse: collapse; margin: 12px 0;
+    font-size: 14px;
+  }
+  thead th {
+    background: #161b22; color: #8b949e; font-weight: 600; text-align: left;
+    padding: 10px 12px; border-bottom: 2px solid #30363d;
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  tbody td {
+    padding: 10px 12px; border-bottom: 1px solid #21262d; vertical-align: top;
+  }
+  tbody tr:hover { background: #161b22; }
+  .tag { display: inline-block; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 500; }
+  .tag-feat { background: #23863633; color: #3fb950; }
+  .tag-ext { background: #d2992233; color: #d29922; }
+  .tag-info { background: #1f6feb22; color: #79c0ff; }
+  .hr { border: none; border-top: 1px solid #21262d; margin: 32px 0; }
+  .note {
+    background: #161b22; border-left: 3px solid #58a6ff;
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+    font-size: 14px; color: #8b949e;
+  }
+  .note strong { color: #c9d1d9; }
+  pre {
+    background: #161b22; border: 1px solid #30363d; border-radius: 6px;
+    padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 13px;
+    overflow-x: auto; line-height: 1.5; color: #c9d1d9; margin: 16px 0;
+  }
+  .footer { text-align: center; color: #484f58; font-size: 13px; margin-top: 48px; padding-top: 16px; border-bottom: 1px solid #21262d; }
+  .supp-table td { font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>3D Printing Manufacturing Tools Specification</h1>
+  <p class="subtitle">FissionCAD — Fusion 360 Manufacture Workspace (Additive Manufacturing)</p>
+
+  <!-- 1. Overview / Supported Tech -->
+  <h2><span>🖨️</span> Overview</h2>
+  <p style="color:#8b949e;font-size:14px;margin-bottom:12px;">FissionCAD's additive manufacturing capabilities support multiple 3D printing technologies across the full workflow from print preparation to G-code generation. Parametric links to original designs enable design changes to propagate directly to print-ready files.</p>
+  <table>
+    <thead>
+      <tr><th>Technology</th><th>Abbr.</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Fused Filament Fabrication</strong></td><td>FFF/FDM</td><td>Thermoplastic filament extrusion</td></tr>
+      <tr><td><strong>Stereolithography</strong></td><td>SLA/DLP</td><td>Resin-based vat photopolymerization</td></tr>
+      <tr><td><strong>Selective Laser Sintering</strong></td><td>SLS</td><td>Powder bed fusion for polymers</td></tr>
+      <tr><td><strong>Metal Powder Bed Fusion</strong></td><td>MPBF</td><td>Metal additive manufacturing</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 2. Workspace & Access -->
+  <h2><span>🪟</span> Workspace &amp; Access</h2>
+  <table>
+    <thead>
+      <tr><th>Component</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Primary Workspace</strong></td><td>Design → Manufacture Workspace</td></tr>
+      <tr><td><strong>3D Printing Access</strong></td><td>Manufacture tab → Additive section</td></tr>
+      <tr><td><strong>Prerequisite</strong></td><td>None (included in base FissionCAD)</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 3. Print Preparation -->
+  <h2><span>⚙️</span> Print Preparation Tools</h2>
+
+  <h3>3.1 Manufacturing Model Creation</h3>
+  <p style="color:#8b949e;font-size:14px;margin-bottom:8px;">The derive workflow manages model changes specifically for print preparation, creating Manufacturing Models that separate print-specific modifications from the original design. This non-destructive workflow enables part modifications optimized for 3D printing without altering source geometry, and management of design iterations across print preparation phases.</p>
+
+  <h3>3.2 Additive Setup</h3>
+  <p style="color:#8b949e;font-size:14px;margin-bottom:8px;">Creating an additive setup is the first step in preparing a model for 3D printing.</p>
+  <table>
+    <thead>
+      <tr><th>Component</th><th>Function</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Machine Selection</strong></td><td>Choose from printer library or configure custom machine</td></tr>
+      <tr><td><strong>Print Settings</strong></td><td>Define layer height, extrusion width, temperature parameters</td></tr>
+      <tr><td><strong>Material Selection</strong></td><td>Specify material type and properties</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 4. Part Positioning & Orientation -->
+  <h2><span>🎯</span> Part Positioning &amp; Orientation</h2>
+
+  <h3>4.1 Manual Positioning</h3>
+  <p style="color:#8b949e;font-size:14px;margin-bottom:8px;">Interactive tools for manually positioning components on the build platform: translation and rotation controls, snap-to-platform functionality, collision detection during placement.</p>
+
+  <h3>4.2 Automatic Orientation</h3>
+  <p style="color:#8b949e;font-size:14px;margin-bottom:8px;">Algorithm-driven orientation optimization based on minimizing build height, reducing support requirements, optimizing surface quality for critical features, and avoiding overhangs exceeding machine capabilities.</p>
+
+  <h3>4.3 Automatic Arrangement</h3>
+  <p style="color:#8b949e;font-size:14px;margin-bottom:8px;">Multi-part packing algorithms that automatically arrange multiple components on build platform, maximize build volume utilization, maintain minimum part spacing requirements, and respect machine-specific build area constraints.</p>
+
+  <h3>4.4 Positioning Features</h3>
+  <table>
+    <thead>
+      <tr><th>Feature</th><th>Capability</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Automatic Alignment</strong></td><td>Align parts to platform or reference geometry</td></tr>
+      <tr><td><strong>Orientation Optimization</strong></td><td>Minimize build height and supports</td></tr>
+      <tr><td><strong>Collision Detection</strong></td><td>Identify inter-part and part-platform collisions</td></tr>
+      <tr><td><strong>Minimum Build Height</strong></td><td>Optimize orientation for lowest Z-height</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 5. Support Structure Generation -->
+  <h2><span>🏗️</span> Support Structure Generation</h2>
+
+  <h3>5.1 Support Types</h3>
+  <table>
+    <thead>
+      <tr><th>Support Type</th><th>Description</th><th>Best For</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Volume</strong></td><td>Solid block supports</td><td>Large overhangs, MPBF</td></tr>
+      <tr><td><strong>Bar/Rod</strong></td><td>Linear support elements</td><td>FFF, general purpose</td></tr>
+      <tr><td><strong>Polyline</strong></td><td>Custom path-defined supports</td><td>Complex geometries</td></tr>
+      <tr><td><strong>Lattice</strong></td><td>Grid/network structures</td><td>Reduced material usage</td></tr>
+      <tr><td><strong>Dome</strong></td><td>Curved support caps</td><td>Sensitive surfaces</td></tr>
+      <tr><td><strong>Contour with Polyline</strong></td><td>Boundary-following supports</td><td>Precise edge support</td></tr>
+    </tbody>
+  </table>
+
+  <h3>5.2 Support Customization</h3>
+  <table>
+    <thead>
+      <tr><th>Parameter</th><th>Function</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Support Settings</strong></td><td>Density, pattern type, contact distance</td></tr>
+      <tr><td><strong>Platform Settings</strong></td><td>Build plate adhesion options (raft, brim, skirt)</td></tr>
+      <tr><td><strong>Customization</strong></td><td>Manual addition/removal of support regions</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 6. Toolpath Generation -->
+  <h2><span>🔪</span> Toolpath Generation <span class="badge">Slicing</span></h2>
+
+  <h3>6.1 Additive Toolpath Generation</h3>
+  <p style="color:#8b949e;font-size:14px;margin-bottom:8px;">The core slicing functionality converts 3D models into printable layers. After proper orientation, arrangement, and support configuration, the additive toolpath is generated with a single click.</p>
+  <table>
+    <thead>
+      <tr><th>Category</th><th>Parameters</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Layer Settings</strong></td><td>Layer height, first layer settings</td></tr>
+      <tr><td><strong>Perimeter/Shell</strong></td><td>Wall count, outer wall order</td></tr>
+      <tr><td><strong>Infill</strong></td><td>Pattern type, density, overlap percentage</td></tr>
+      <tr><td><strong>Temperature</strong></td><td>Nozzle temperature, bed temperature, cooling</td></tr>
+      <tr><td><strong>Speed</strong></td><td>Print speed, travel speed, first layer speed</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.2 Toolpath Visualization</h3>
+  <table>
+    <thead>
+      <tr><th>Feature</th><th>Capability</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Layer-by-Layer View</strong></td><td>Visualize outcome at each individual layer</td></tr>
+      <tr><td><strong>Nozzle Movement Simulation</strong></td><td>Travel and extrusion moves visualized</td></tr>
+      <tr><td><strong>Extrusion Visualization</strong></td><td>Material deposition display</td></tr>
+      <tr><td><strong>Retraction Display</strong></td><td>Show retraction locations and lengths</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.3 Print Statistics</h3>
+  <p style="color:#8b949e;font-size:14px;margin-bottom:8px;">The toolpath generation process provides: estimated print time, material consumption (length and weight), energy consumption estimates, and cost calculations (when material costs configured).</p>
+
+  <!-- 7. Simulation -->
+  <h2><span>🎬</span> Simulation Tools</h2>
+
+  <h3>7.1 Additive Toolpath Simulation</h3>
+  <p style="color:#8b949e;font-size:14px;margin-bottom:8px;">Simulate the printing process to detect and remedy common print failures.</p>
+  <table>
+    <thead>
+      <tr><th>Feature</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Toolpath Simulation</strong></td><td>Visualize nozzle/tool movement throughout print</td></tr>
+      <tr><td><strong>Layer Progression</strong></td><td>Watch build grow layer by layer</td></tr>
+      <tr><td><strong>Collision Detection</strong></td><td>Identify collisions between tool and part</td></tr>
+      <tr><td><strong>Extrusion Verification</strong></td><td>Confirm material deposition matches expected</td></tr>
+    </tbody>
+  </table>
+
+  <h3>7.2 Metal Powder Bed Fusion Simulation</h3>
+  <p style="color:#8b949e;font-size:14px;margin-bottom:8px;">For MPBF processes: thermal simulation (predict heat distribution), stress simulation (identify potential warping and delamination), and compensation (apply geometry compensation for predictable distortion).</p>
+  <div class="note">
+    <strong>Extension Required:</strong> MPBF simulation requires additional licensing beyond base FissionCAD.
+  </div>
+
+  <!-- 8. Export -->
+  <h2><span>📤</span> Export &amp; Post-Processing</h2>
+
+  <h3>8.1 G-Code Generation</h3>
+  <pre>
+1. Click Post Process button in SIMULATE ADDITIVE TOOLPATH dialog
+2. NC Program dialog opens automatically
+3. Select appropriate post-processor for target machine
+4. Configure post-processor properties
+5. Generate and save G-code file</pre>
+
+  <h3>8.2 Export File Formats</h3>
+  <table>
+    <thead>
+      <tr><th>Format</th><th>Description</th><th>Use Case</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>3MF</strong></td><td>3D Manufacturing Format</td><td>Preferred for multi-material/color</td></tr>
+      <tr><td><strong>STL</strong></td><td>Standard Tessellation Language</td><td>Universal format, compatible with all slicers</td></tr>
+      <tr><td><strong>G-Code</strong></td><td>Machine instructions</td><td>Direct printer execution</td></tr>
+      <tr><td><strong>CLI</strong></td><td>Common Layer Interface</td><td>Industrial 3D printing systems</td></tr>
+      <tr><td><strong>SLI</strong></td><td>SLC/SLI format</td><td>Sintering/lamination processes</td></tr>
+    </tbody>
+  </table>
+
+  <h3>8.3 Export Resolution Options</h3>
+  <table>
+    <thead>
+      <tr><th>Refinement</th><th>Best For</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Low</strong></td><td>Quick exports, prototypes</td></tr>
+      <tr><td><strong>Medium</strong></td><td>General purpose</td></tr>
+      <tr><td><strong>High</strong></td><td>Detailed models</td></tr>
+      <tr><td><strong>Ultra</strong></td><td>Highly detailed geometry, large round objects</td></tr>
+      <tr><td><strong>Custom</strong></td><td>Special requirements</td></tr>
+    </tbody>
+  </table>
+
+  <h3>8.4 Export Structure Options</h3>
+  <table>
+    <thead>
+      <tr><th>Structure</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>One File</strong></td><td>All visible bodies in a single file</td></tr>
+      <tr><td><strong>One File Per Body in Component</strong></td><td>Individual files per body, maintains component grouping</td></tr>
+      <tr><td><strong>One File Per Body in Occurrence</strong></td><td>Individual files preserving position data for multi-material prints</td></tr>
+      <tr><td><strong>One File Per Top Level Occurrence</strong></td><td>Logical grouping for color/material separation</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 10. File Import & Repair -->
+  <h2><span>📂</span> File Import &amp; Repair</h2>
+  <table>
+    <thead>
+      <tr><th>Tool</th><th>Function</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Mesh Inspection</strong></td><td>Identify non-manifold geometry, holes, inverted normals</td></tr>
+      <tr><td><strong>Mesh Repair</strong></td><td>Automatic and manual repair of common mesh issues</td></tr>
+      <tr><td><strong>Conversion</strong></td><td>Convert mesh bodies to solid bodies for editing</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 11. Complete Manufacturing Workflow -->
+  <h2><span>📋</span> Complete Manufacturing Workflow</h2>
+  <pre>
+DESIGN PHASE
+    │
+    ├── Create/Import CAD Model
+    ├── Design for Additive Manufacturing (DFAM) principles
+    │   ├── Lightweight part design
+    │   ├── Structural simulation
+    │   └── Volumetric lattice generation
+    │
+    ▼
+MANUFACTURE WORKSPACE
+    │
+    ├── Create Manufacturing Model (derive workflow)
+    ├── Additive Setup
+    │   ├── Select printer/machine
+    │   ├── Configure print settings
+    │   └── Select material
+    │
+    ├── Position & Orient Parts
+    │   ├── Manual positioning OR
+    │   ├── Automatic orientation
+    │   └── Automatic arrangement (multi-part)
+    │
+    ├── Generate Supports (if required)
+    │   ├── Select support type
+    │   ├── Configure parameters
+    │   └── Manual adjustments
+    │
+    ├── Generate Toolpath (Slice)
+    │   ├── Configure layer settings
+    │   ├── Set infill/perimeter parameters
+    │   └── One-click generation
+    │
+    ├── Simulate Toolpath
+    │   ├── Layer-by-layer visualization
+    │   ├── Collision detection
+    │   └── Verify toolpath
+    │
+    ├── Post-Process
+    │   ├── Select post-processor
+    │   ├── Configure properties
+    │   └── Generate G-code
+    │
+    └── EXPORT
+        ├── Save as STL/3MF
+        ├── Export G-code to SD card/serial
+        └── Or send directly to third-party slicer</pre>
+
+  <!-- 12. Extension Requirements -->
+  <h2><span>⚖️</span> Extension Requirements Summary</h2>
+  <table>
+    <thead>
+      <tr><th>Capability</th><th>Base FissionCAD</th><th>Extension Required</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>FFF/SLA/SLS Print Preparation</td><td><span class="tag tag-feat">✓</span></td><td>—</td></tr>
+      <tr><td>Support Generation (Basic)</td><td><span class="tag tag-feat">✓</span></td><td>—</td></tr>
+      <tr><td>Toolpath Generation (FFF)</td><td><span class="tag tag-feat">✓</span></td><td>—</td></tr>
+      <tr><td>G-code Export</td><td><span class="tag tag-feat">✓</span></td><td>—</td></tr>
+      <tr><td>STL/3MF Export</td><td><span class="tag tag-feat">✓</span></td><td>—</td></tr>
+      <tr><td>MPBF (Metal) Support</td><td><span class="tag tag-ext">✗</span></td><td>Additive Extension</td></tr>
+      <tr><td>MPBF Process Simulation</td><td><span class="tag tag-ext">✗</span></td><td>Additive Extension</td></tr>
+      <tr><td>Volumetric Lattice Generation</td><td><span class="tag tag-ext">✗</span></td><td>Product Design Extension</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 13. Shortcuts -->
+  <h2><span>⌨️</span> Key Commands Summary</h2>
+  <table>
+    <thead>
+      <tr><th>Command</th><th>Function</th><th>Location</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Additive Setup</strong></td><td>Configure printer and material</td><td>Manufacture → Additive</td></tr>
+      <tr><td><strong>Arrange</strong></td><td>Auto-position multiple parts</td><td>Additive → Arrange</td></tr>
+      <tr><td><strong>Generate Toolpath</strong></td><td>Slice model for printing</td><td>Additive → Generate</td></tr>
+      <tr><td><strong>Simulate Toolpath</strong></td><td>Preview print process</td><td>Additive → Simulate</td></tr>
+      <tr><td><strong>Post Process</strong></td><td>Generate G-code</td><td>Simulate dialog → Post Process</td></tr>
+    </tbody>
+  </table>
+
+  <div class="footer">FissionCAD — 3D Printing Manufacturing Tools Specification &middot; (c) GnomeWorx 2026</div>
+</div>
+</body>
+</html>

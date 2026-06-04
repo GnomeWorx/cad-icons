@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FissionCAD - Plastic Modeling Tools Specification</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #0d1117; color: #c9d1d9; line-height: 1.6; padding: 40px 20px;
+  }
+  .container { max-width: 920px; margin: 0 auto; }
+  h1 { font-size: 28px; font-weight: 700; color: #f0f6fc; margin-bottom: 4px; }
+  .subtitle { color: #8b949e; font-size: 14px; margin-bottom: 32px; }
+  h2 {
+    font-size: 20px; font-weight: 600; color: #58a6ff;
+    margin-top: 40px; margin-bottom: 16px; padding-bottom: 8px;
+    border-bottom: 1px solid #21262d; display: flex; align-items: center; gap: 8px;
+  }
+  h2 .badge { font-size: 12px; background: #1f6feb33; color: #58a6ff; padding: 2px 8px; border-radius: 10px; }
+  h3 { font-size: 16px; font-weight: 600; color: #f0f6fc; margin-top: 24px; margin-bottom: 10px; }
+  h4 { font-size: 14px; font-weight: 600; color: #c9d1d9; margin-top: 16px; margin-bottom: 8px; }
+  table {
+    width: 100%; border-collapse: collapse; margin: 12px 0;
+    font-size: 14px;
+  }
+  thead th {
+    background: #161b22; color: #8b949e; font-weight: 600; text-align: left;
+    padding: 10px 12px; border-bottom: 2px solid #30363d;
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  tbody td {
+    padding: 10px 12px; border-bottom: 1px solid #21262d; vertical-align: top;
+  }
+  tbody tr:hover { background: #161b22; }
+  .tag { display: inline-block; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 500; }
+  .tag-feat { background: #23863633; color: #3fb950; }
+  .tag-ext { background: #d2992233; color: #d29922; }
+  .tag-info { background: #1f6feb22; color: #79c0ff; }
+  .hr { border: none; border-top: 1px solid #21262d; margin: 32px 0; }
+  .note {
+    background: #161b22; border-left: 3px solid #58a6ff;
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+    font-size: 14px; color: #8b949e;
+  }
+  .note strong { color: #c9d1d9; }
+  .note.warn { border-left-color: #d29922; }
+  pre {
+    background: #161b22; border: 1px solid #30363d; border-radius: 6px;
+    padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 13px;
+    overflow-x: auto; line-height: 1.5; color: #c9d1d9; margin: 16px 0;
+  }
+  .footer { text-align: center; color: #484f58; font-size: 13px; margin-top: 48px; padding-top: 16px; border-top: 1px solid #21262d; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Plastic Modeling Tools Specification</h1>
+  <p class="subtitle">FissionCAD — Fusion 360 Solid Modeling (Plastic) tools, inspired by the Product Design Extension</p>
+
+  <div class="note warn">
+    <strong>Note:</strong> The plastic-specific tools documented here are inspired by Fusion 360's <strong>Product Design Extension</strong> — a paid add-on. FissionCAD implements equivalents where possible. Base modeling (Extrude, Shell, Draft, Fillet) is available without restrictions.
+  </div>
+
+  <!-- 2. Workspace & Access -->
+  <h2><span>🪟</span> Workspace &amp; Access</h2>
+  <table>
+    <thead>
+      <tr><th>Component</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Location</strong></td><td>Design Workspace → Plastic Tab</td></tr>
+      <tr><td><strong>Best Practice</strong></td><td>Assign Plastic Rules before creating features</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 3. Plastic Rules -->
+  <h2><span>📋</span> Plastic Rules <span class="badge">Intelligent Material Definition</span></h2>
+  <p style="color:#8b949e;font-size:14px;margin-bottom:12px;">Plastic Rules are parametric definitions that control material properties and manufacturing constraints across components. They enable automatic propagation of design parameters whenever a feature is created.</p>
+
+  <h3>3.1 Rule Components</h3>
+  <table>
+    <thead>
+      <tr><th>Category</th><th>Parameters</th><th>Function</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Physical Material</strong></td><td>Material type (ABS, Nylon, etc.)</td><td>Affects mass/physical properties</td></tr>
+      <tr><td><strong>Physical Values</strong></td><td>Thickness, Draft Angle, Nominal Radius</td><td>Referenced by modeling commands</td></tr>
+      <tr><td><strong>Design Advice Values</strong></td><td>Thickness range, variation, min draft angle, knife-edge threshold</td><td>Used for manufacturability analysis</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.2 How Rules Apply to Features</h3>
+  <table>
+    <thead>
+      <tr><th>Feature</th><th>Inherits From Rule</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Shell</td><td>Thickness</td></tr>
+      <tr><td>Rib/Web</td><td>Thickness, Draft Angle</td></tr>
+      <tr><td>Boss</td><td>Draft Angle, Thickness</td></tr>
+      <tr><td>Snap Fit</td><td>Thickness, Draft Angle</td></tr>
+      <tr><td>Draft</td><td>Draft Angle</td></tr>
+      <tr><td>Fillet</td><td>Nominal Radius</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.3 Workflow</h3>
+  <pre>
+1. Access Plastic Tab → Assign Plastic Rule
+2. Select target component
+3. Choose pre-defined rule or create custom
+4. Rule populates Parameters dialog automatically
+5. Subsequent features inherit rule values
+6. Change material → all features update automatically</pre>
+
+  <!-- 4. Plastic Feature Tools -->
+  <h2><span>🏭</span> Plastic Feature Tools</h2>
+
+  <h3>4.1 Boss Tool</h3>
+  <p style="color:#8b949e;font-size:14px;margin-bottom:8px;">Creates cylindrical protrusions (bosses) for fastener attachment and component joining.</p>
+  <table>
+    <thead>
+      <tr><th>Parameter</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Positioning</strong></td><td>Requires sketch point (recommended on offset or mid-plane)</td></tr>
+      <tr><td><strong>Offset Position</strong></td><td>Distance from sketch plane</td></tr>
+      <tr><td><strong>Diameter</strong></td><td>Boss outer diameter</td></tr>
+      <tr><td><strong>Fastener Diameter</strong></td><td>Inner hole diameter for screw/insert</td></tr>
+      <tr><td><strong>Direction</strong></td><td>Boss extrusion direction</td></tr>
+      <tr><td><strong>Dual Bosses</strong></td><td>Creates bosses on both sides of sketch plane when two bodies visible</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <strong>Rule Integration:</strong> Boss automatically applies Draft Angle and Thickness from assigned Plastic Rule.
+  </div>
+
+  <h3>4.2 Snap Fit Tool</h3>
+  <p style="color:#8b949e;font-size:14px;margin-bottom:8px;">Creates snap-fit geometry for joining two plastic components without fasteners.</p>
+  <table>
+    <thead>
+      <tr><th>Type</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Parallel Hook &amp; Groove</strong></td><td>Hook and groove aligned with pull direction</td></tr>
+      <tr><td><strong>Perpendicular Hook &amp; Groove</strong></td><td>Hook perpendicular to pull direction</td></tr>
+      <tr><td><strong>Hook &amp; Loop</strong></td><td>Cantilever hook with catching loop</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <strong>Parameters:</strong> Position via sketch points between two bodies, individual or global hook angle adjustment, hook extension/shortening controls, automatic clearance cut when hook intersects second body.<br>
+    <strong>Rule Integration:</strong> Inherits Thickness and Draft Angle from Plastic Rule.
+  </div>
+
+  <h3>4.3 Rib / Web Tool</h3>
+  <p style="color:#8b949e;font-size:14px;margin-bottom:8px;">Creates reinforcing ribs or webs to strengthen thin-walled plastic parts without increasing overall thickness.</p>
+  <div class="note">
+    <strong>Rule Integration:</strong> Thickness driven by Plastic Rule, Draft Angle applied automatically, associative top/bottom features created.
+  </div>
+
+  <h3>4.4 Shell Tool</h3>
+  <p style="color:#8b949e;font-size:14px;margin-bottom:8px;">Converts a solid body into a hollow shell with uniform wall thickness.</p>
+  <div class="note">
+    <strong>Rule Integration:</strong> Thickness automatically populates from Plastic Rule when rule is assigned. Must assign Plastic Rule <strong>before</strong> using Shell for inheritance to work.
+  </div>
+
+  <h3>4.5 Draft Tool</h3>
+  <p style="color:#8b949e;font-size:14px;margin-bottom:8px;">Applies draft angles to faces to enable ejection from injection molds.</p>
+  <div class="note">
+    <strong>Rule Integration:</strong> Draft Angle value inherits from Plastic Rule. Pull direction must be defined for Design Advice analysis.
+  </div>
+
+  <h3>4.6 Thicken Tool</h3>
+  <p style="color:#8b949e;font-size:14px;margin-bottom:8px;">Adds thickness to surface bodies or offsets faces of solid bodies.</p>
+  <div class="note">
+    <strong>Rule Integration:</strong> Thickness value inherits from assigned Plastic Rule. Requires rule assignment prior to feature creation.
+  </div>
+
+  <h3>4.7 Geometric Pattern Tool</h3>
+  <p style="color:#8b949e;font-size:14px;margin-bottom:8px;">Creates complex patterns on flat or curved surfaces with size gradients and multiple distribution types.</p>
+  <table>
+    <thead>
+      <tr><th>Distribution</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Square</strong></td><td>Grid arrangement</td></tr>
+      <tr><td><strong>Triangular</strong></td><td>Staggered triangular layout</td></tr>
+      <tr><td><strong>Hexagonal</strong></td><td>Honeycomb pattern</td></tr>
+      <tr><td><strong>Circular</strong></td><td>Radial arrangement around center</td></tr>
+      <tr><td><strong>Arrayed</strong></td><td>Standard array pattern</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <strong>Shape Options:</strong> Default shapes (Sphere, Cylinder, Cube) or custom shape (any solid body in file).<br>
+    <strong>Key Parameters:</strong> Size limit/range (varies object sizes), border clearance option, face selection, join/cut/new body boolean operations.<br>
+    <strong>Applications:</strong> Ventilation holes, grip textures, aesthetic patterns, light passages.
+  </div>
+
+  <!-- 5. Analysis & Validation -->
+  <h2><span>🔬</span> Analysis &amp; Validation Tools</h2>
+
+  <h3>5.1 Design Advice</h3>
+  <p style="color:#8b949e;font-size:14px;margin-bottom:8px;">Identifies manufacturability concerns based on injection molding best practices and assigned Plastic Rules.</p>
+  <pre>
+1. Select Design Advice in Plastic tab
+2. Select component and pull direction (tool movement direction after injection)
+3. Click Analyze</pre>
+  <table>
+    <thead>
+      <tr><th>Tab</th><th>Issues Checked</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Thickness</strong></td><td>Large variations, walls too thin, walls too thick</td></tr>
+      <tr><td><strong>Undercuts</strong></td><td>Features requiring sliders or lifters in mold</td></tr>
+      <tr><td><strong>Draft</strong></td><td>Faces with insufficient draft angle</td></tr>
+      <tr><td><strong>Knife-edge</strong></td><td>Thin, long tool features (causes premature wear)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>5.2 Snap Design Analysis</h3>
+  <p style="color:#8b949e;font-size:14px;margin-bottom:8px;">Analyzes snap performance including deformation during engagement.</p>
+
+  <h3>5.3 Volumetric Lattice</h3>
+  <p style="color:#8b949e;font-size:14px;margin-bottom:8px;">Modifies existing solid or mesh bodies to create complex internal lattice structures.<br>
+  <strong>Parameters:</strong> Cell shape, cell size, density.</p>
+
+  <!-- 8. Core vs. Extension -->
+  <h2><span>⚖️</span> Tool Availability Summary</h2>
+  <table>
+    <thead>
+      <tr><th>Tool</th><th>Base FissionCAD</th><th>Product Design Extension</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Extrude</td><td><span class="tag tag-feat">✓</span></td><td><span class="tag tag-feat">✓</span></td></tr>
+      <tr><td>Shell</td><td><span class="tag tag-feat">✓</span></td><td><span class="tag tag-feat">✓</span> (rule inheritance)</td></tr>
+      <tr><td>Draft</td><td><span class="tag tag-feat">✓</span></td><td><span class="tag tag-feat">✓</span> (rule inheritance)</td></tr>
+      <tr><td>Fillet</td><td><span class="tag tag-feat">✓</span></td><td><span class="tag tag-feat">✓</span> (rule inheritance)</td></tr>
+      <tr><td>Plastic Rules</td><td><span class="tag tag-ext">✗</span></td><td><span class="tag tag-feat">✓</span></td></tr>
+      <tr><td>Boss</td><td><span class="tag tag-ext">✗</span></td><td><span class="tag tag-feat">✓</span></td></tr>
+      <tr><td>Snap Fit</td><td><span class="tag tag-ext">✗</span></td><td><span class="tag tag-feat">✓</span></td></tr>
+      <tr><td>Rib/Web (enhanced)</td><td><span class="tag tag-ext">✗</span></td><td><span class="tag tag-feat">✓</span></td></tr>
+      <tr><td>Geometric Pattern</td><td><span class="tag tag-ext">✗</span></td><td><span class="tag tag-feat">✓</span></td></tr>
+      <tr><td>Design Advice</td><td><span class="tag tag-ext">✗</span></td><td><span class="tag tag-feat">✓</span></td></tr>
+      <tr><td>Volumetric Lattice</td><td><span class="tag tag-ext">✗</span></td><td><span class="tag tag-feat">✓</span> (Preview)</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 9. Recommended Workflow -->
+  <h2><span>📋</span> Recommended Workflow</h2>
+  <pre>
+1. Activate Product Design Extension
+2. Access Plastic Tab in Design Workspace
+3. Assign Plastic Rule to component(s)
+   └── Select material (ABS, Nylon, etc.)
+   └── Define/confirm physical values
+   └── Set design advice thresholds
+4. Create base geometry (Extrude, Revolve, etc.)
+5. Apply Shell (inherits thickness from rule)
+6. Add plastic features:
+   ├── Boss (from sketch points)
+   ├── Snap Fits (from sketch points)
+   └── Ribs/Webs
+7. Apply automatic Draft and Fillet (rule-driven)
+8. Run Design Advice analysis
+   └── Define pull direction
+   └── Review thickness/undercut/draft/knife-edge alerts
+   └── Implement recommendations
+9. Iterate and refine</pre>
+
+  <!-- 10. Key Benefits -->
+  <h2><span>✨</span> Key Benefits</h2>
+  <table>
+    <thead>
+      <tr><th>Benefit</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Parametric propagation</strong></td><td>Change material → all plastic features update automatically</td></tr>
+      <tr><td><strong>Manufacturing awareness</strong></td><td>Features designed with injection molding constraints built-in</td></tr>
+      <tr><td><strong>Reduced clicks</strong></td><td>Secondary features (draft, fillet) applied automatically</td></tr>
+      <tr><td><strong>Design validation</strong></td><td>Catch manufacturability issues before prototyping</td></tr>
+      <tr><td><strong>Fastener library</strong></td><td>Integrated screw/insert library with component generation</td></tr>
+    </tbody>
+  </table>
+
+  <div class="footer">FissionCAD — Plastic Modeling Tools Specification &middot; (c) GnomeWorx 2026</div>
+</div>
+</body>
+</html>

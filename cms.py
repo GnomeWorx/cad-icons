@@ -13,7 +13,8 @@ from PyQt5.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QPushButton, QFileDialog, QMessageBox,
     QFrame, QSplitter, QTextEdit, QTabWidget, QGroupBox, QListWidget,
     QListWidgetItem, QComboBox, QLineEdit, QFormLayout, QCheckBox,
-    QSpinBox, QColorDialog, QSlider, QSizePolicy, QToolTip
+    QSpinBox, QColorDialog, QSlider, QSizePolicy, QToolTip,
+    QTextBrowser
 )
 from PyQt5.QtCore import Qt, QSize, QTimer, pyqtSignal
 from PyQt5.QtGui import (
@@ -241,8 +242,12 @@ class IconCMS(QWidget):
         # Tab 4: Icon generator
         self._build_generator_tab()
 
-        # Tab 5: Spec Reference — sketch_tools.txt integrated
+        # Tab 5: Spec Reference — sketch_tools.txt integrated (with sub-tabs for model/make)
         self._build_spec_tab()
+
+        # Tabs 6-7: Model & Make specs as standalone HTML pages
+        self._build_model_spec_tab()
+        self._build_make_spec_tab()
 
         self._refresh_all()
 
@@ -739,6 +744,76 @@ class IconCMS(QWidget):
     def _spec_legend_dot(self, color, text):
         return QLabel(f'<span style="color:{color};font-size:14px">●</span>'
                       f' <span style="color:#6b6e78;font-size:10px">{text}</span>')
+
+    def _build_model_spec_tab(self):
+        """Tab 6: Model (Plastic) spec as HTML reference"""
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        layout.setContentsMargins(8, 8, 8, 8)
+
+        hdr = QHBoxLayout()
+        title = QLabel("<b>Plastic Model Spec</b>  "
+                       "<span style='color:#4a4d57;font-size:11px'>model_tools.txt</span>")
+        title.setStyleSheet("font-size: 16px; color: #c1c3c8;")
+        hdr.addWidget(title)
+        hdr.addStretch()
+        layout.addLayout(hdr)
+
+        viewer = QTextBrowser()
+        viewer.setOpenExternalLinks(True)
+        viewer.setStyleSheet("""
+            QTextBrowser {
+                background-color: #0d1117;
+                color: #c9d1d9;
+                border: none;
+                font-family: 'Inter', 'Segoe UI', sans-serif;
+                font-size: 14px;
+            }
+        """)
+        html_path = os.path.join(os.path.dirname(__file__), "refs", "model_spec.html")
+        if os.path.exists(html_path):
+            with open(html_path) as f:
+                viewer.setHtml(f.read())
+        else:
+            viewer.setPlainText("model_spec.html not found in refs/")
+        layout.addWidget(viewer, 1)
+
+        self.tabs.addTab(tab, "Model Spec")
+
+    def _build_make_spec_tab(self):
+        """Tab 7: Make (3D Printing) spec as HTML reference"""
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        layout.setContentsMargins(8, 8, 8, 8)
+
+        hdr = QHBoxLayout()
+        title = QLabel("<b>3D Print Make Spec</b>  "
+                       "<span style='color:#4a4d57;font-size:11px'>make_tools.txt</span>")
+        title.setStyleSheet("font-size: 16px; color: #c1c3c8;")
+        hdr.addWidget(title)
+        hdr.addStretch()
+        layout.addLayout(hdr)
+
+        viewer = QTextBrowser()
+        viewer.setOpenExternalLinks(True)
+        viewer.setStyleSheet("""
+            QTextBrowser {
+                background-color: #0d1117;
+                color: #c9d1d9;
+                border: none;
+                font-family: 'Inter', 'Segoe UI', sans-serif;
+                font-size: 14px;
+            }
+        """)
+        html_path = os.path.join(os.path.dirname(__file__), "refs", "make_spec.html")
+        if os.path.exists(html_path):
+            with open(html_path) as f:
+                viewer.setHtml(f.read())
+        else:
+            viewer.setPlainText("make_spec.html not found in refs/")
+        layout.addWidget(viewer, 1)
+
+        self.tabs.addTab(tab, "Make Spec")
 
     def _refresh_spec(self):
         """Rebuild the spec tab content with filter applied"""
