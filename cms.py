@@ -35,7 +35,9 @@ PREVIEW_SIZE = 160
 # ── Parsed tool definitions from FC source ───────────────────────
 
 def parse_tool_defs():
-    """Parse tool definitions from SketchStage.cpp, ModelStage.cpp, PrintStage.cpp"""
+    """Parse tool definitions from SketchStage.cpp, ModelStage.cpp, PrintStage.cpp
+    plus a synthetic Constraints stage (since constraints share a single S_Constraint tool
+    in FissionCAD but are tracked individually in the spec)."""
     stages = {}
     for stage_name, src_file in [
         ("Sketch", os.path.join(SRC_DIR, "SketchStage.cpp")),
@@ -63,6 +65,30 @@ def parse_tool_defs():
                 "shortcut": shortcut,
             })
         stages[stage_name] = tools
+
+    # ── Synthetic Constraints stage ──
+    # Constraints are individual in the spec but map to the generic S_Constraint
+    # tool in FissionCAD. Track them here so they appear in Browse/Stage Mapping.
+    constraint_tools = [
+        ("Coincident",  "coincident.svg"),
+        ("Horizontal",  "horizontal.svg"),
+        ("Vertical",    "vertical.svg"),
+        ("Parallel",    "parallel.svg"),
+        ("Perpendicular","perpendicular.svg"),
+        ("Tangent",     "tangent.svg"),
+        ("Equal",       "equal.svg"),
+        ("Concentric",  "concentric.svg"),
+        ("Collinear",   "collinear.svg"),
+        ("Fix",         "fix.svg"),
+        ("Midpoint",    "midpoint.svg"),
+        ("Symmetric",   "symmetric.svg"),
+        ("Curvature",   "curvature.svg"),
+    ]
+    stages["Constraints"] = [
+        {"id": "-1", "name": name, "icon": icon, "shortcut": ""}
+        for name, icon in constraint_tools
+    ]
+
     return stages
 
 
@@ -91,32 +117,62 @@ def render_svg_to_pixmap(svg_content, size=64, dark=True):
 # ── CONTENT MANAGEMENT SYSTEM ────────────────────────────────────
 
 class IconCMS(QWidget):
+
+    # ── Theme stylesheets ──────────────────────────────────────────
+    DARK_QSS = """
+        QWidget { background-color: #1e1e2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; font-size: 12px; }
+        QTabWidget::pane { background: #1a1b1e; border: 1px solid #2a2b30; }
+        QTabBar::tab { background: #25262b; border: 1px solid #2a2b30; padding: 8px 16px; margin-right: 2px; }
+        QTabBar::tab:selected { background: #1a1b1e; border-bottom: 1px solid #4a9eff; }
+        QListWidget { background: #25262b; border: 1px solid #2a2b30; border-radius: 4px; color: #e0e0e0; }
+        QListWidget::item { padding: 4px; color: #e0e0e0; }
+        QListWidget::item:selected { background: #2a3a55; color: #ffffff; }
+        QListWidget::item:alternate { background: #22232e; }
+        QTextEdit { background: #1e1e2e; color: #c1c3c8; border: 1px solid #2a2b30; font-family: monospace; font-size: 11px; }
+        QGroupBox { border: 1px solid #2a2b30; border-radius: 4px; margin-top: 8px; padding-top: 16px; }
+        QGroupBox::title { color: #4a9eff; font-weight: bold; }
+        QPushButton { background: #2d2d44; border: 1px solid #444; border-radius: 4px; padding: 6px 14px; color: #e0e0e0; }
+        QPushButton:hover { background: #3a3a55; border-color: #4a9eff; }
+        QPushButton#primary { background: #005aa0; border-color: #4a9eff; font-weight: bold; }
+        QPushButton#primary:hover { background: #006ec0; }
+        QComboBox { background: #25262b; border: 1px solid #2a2b30; border-radius: 3px; padding: 3px 8px; color: #e0e0e0; }
+        QSpinBox { background: #25262b; border: 1px solid #2a2b30; border-radius: 3px; padding: 2px 6px; color: #e0e0e0; }
+        QLineEdit { background: #25262b; border: 1px solid #2a2b30; border-radius: 3px; padding: 3px 8px; color: #e0e0e0; }
+        QCheckBox { color: #e0e0e0; }
+        QSlider::groove:horizontal { background: #2a2b30; height: 4px; border-radius: 2px; }
+        QSlider::handle:horizontal { background: #4a9eff; width: 12px; border-radius: 6px; margin: -4px 0; }
+    """
+
+    LIGHT_QSS = """
+        QWidget { background-color: #f0f0f0; color: #222; font-family: 'Segoe UI', sans-serif; font-size: 12px; }
+        QTabWidget::pane { background: #ffffff; border: 1px solid #ccc; }
+        QTabBar::tab { background: #e0e0e0; border: 1px solid #ccc; padding: 8px 16px; margin-right: 2px; }
+        QTabBar::tab:selected { background: #ffffff; border-bottom: 1px solid #4a9eff; }
+        QListWidget { background: #ffffff; border: 1px solid #ccc; border-radius: 4px; color: #222; }
+        QListWidget::item { padding: 4px; color: #222; }
+        QListWidget::item:selected { background: #d0e4ff; color: #000; }
+        QListWidget::item:alternate { background: #f7f7f7; }
+        QTextEdit { background: #ffffff; color: #333; border: 1px solid #ccc; font-family: monospace; font-size: 11px; }
+        QGroupBox { border: 1px solid #ccc; border-radius: 4px; margin-top: 8px; padding-top: 16px; }
+        QGroupBox::title { color: #005aa0; font-weight: bold; }
+        QPushButton { background: #e0e0e0; border: 1px solid #aaa; border-radius: 4px; padding: 6px 14px; color: #222; }
+        QPushButton:hover { background: #d0d0d0; border-color: #4a9eff; }
+        QPushButton#primary { background: #4a9eff; border-color: #4a9eff; font-weight: bold; color: white; }
+        QPushButton#primary:hover { background: #3a8eee; }
+        QComboBox { background: #ffffff; border: 1px solid #ccc; border-radius: 3px; padding: 3px 8px; color: #222; }
+        QSpinBox { background: #ffffff; border: 1px solid #ccc; border-radius: 3px; padding: 2px 6px; color: #222; }
+        QLineEdit { background: #ffffff; border: 1px solid #ccc; border-radius: 3px; padding: 3px 8px; color: #222; }
+        QCheckBox { color: #222; }
+        QSlider::groove:horizontal { background: #ccc; height: 4px; border-radius: 2px; }
+        QSlider::handle:horizontal { background: #4a9eff; width: 12px; border-radius: 6px; margin: -4px 0; }
+    """
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("FissionCAD Icon CMS")
         self.setMinimumSize(1200, 800)
-        self.setStyleSheet("""
-            QWidget { background-color: #1e1e2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; font-size: 12px; }
-            QTabWidget::pane { background: #1a1b1e; border: 1px solid #2a2b30; }
-            QTabBar::tab { background: #25262b; border: 1px solid #2a2b30; padding: 8px 16px; margin-right: 2px; }
-            QTabBar::tab:selected { background: #1a1b1e; border-bottom: 1px solid #4a9eff; }
-            QListWidget { background: #25262b; border: 1px solid #2a2b30; border-radius: 4px; }
-            QListWidget::item { padding: 4px; }
-            QListWidget::item:selected { background: #2a3a55; }
-            QTextEdit { background: #1e1e2e; color: #c1c3c8; border: 1px solid #2a2b30; font-family: monospace; font-size: 11px; }
-            QGroupBox { border: 1px solid #2a2b30; border-radius: 4px; margin-top: 8px; padding-top: 16px; }
-            QGroupBox::title { color: #4a9eff; font-weight: bold; }
-            QPushButton { background: #2d2d44; border: 1px solid #444; border-radius: 4px; padding: 6px 14px; color: #e0e0e0; }
-            QPushButton:hover { background: #3a3a55; border-color: #4a9eff; }
-            QPushButton#primary { background: #005aa0; border-color: #4a9eff; font-weight: bold; }
-            QPushButton#primary:hover { background: #006ec0; }
-            QComboBox { background: #25262b; border: 1px solid #2a2b30; border-radius: 3px; padding: 3px 8px; color: #c1c3c8; }
-            QSpinBox { background: #25262b; border: 1px solid #2a2b30; border-radius: 3px; padding: 2px 6px; color: #c1c3c8; }
-            QLineEdit { background: #25262b; border: 1px solid #2a2b30; border-radius: 3px; padding: 3px 8px; color: #c1c3c8; }
-            QCheckBox { color: #c1c3c8; }
-            QSlider::groove:horizontal { background: #2a2b30; height: 4px; border-radius: 2px; }
-            QSlider::handle:horizontal { background: #4a9eff; width: 12px; border-radius: 6px; margin: -4px 0; }
-        """)
+        self._is_dark = True
+        self.setStyleSheet(self.DARK_QSS)
 
         # Parse tool definitions from FC source
         self.stages = parse_tool_defs()
@@ -164,6 +220,15 @@ class IconCMS(QWidget):
         self.tabs = QTabWidget()
         main_layout.addWidget(self.tabs, 1)
 
+        # ─── Footer ───
+        footer = QHBoxLayout()
+        footer.setContentsMargins(4, 0, 4, 2)
+        ver_label = QLabel("\u00a9 GnomeWorx 2026  Version 0.1.0")
+        ver_label.setStyleSheet("color: #4a4d57; font-size: 11px;")
+        footer.addWidget(ver_label)
+        footer.addStretch()
+        main_layout.addLayout(footer)
+
         # Tab 1: Browse all icons with stage mapping
         self._build_browse_tab()
 
@@ -176,8 +241,13 @@ class IconCMS(QWidget):
         # Tab 4: Icon generator
         self._build_generator_tab()
 
-        self._is_dark = True
+        # Tab 5: Spec Reference — sketch_tools.txt integrated
+        self._build_spec_tab()
+
         self._refresh_all()
+
+        # Default to Spec Reference tab so user sees the Constraints reference first
+        self.tabs.setCurrentIndex(4)
 
     def _load_icons(self):
         """Load all .svg files from FC icon dir"""
@@ -215,7 +285,9 @@ class IconCMS(QWidget):
 
         filt_row.addWidget(QLabel("  Stage:"))
         self.browse_stage_filter = QComboBox()
-        self.browse_stage_filter.addItems(["All", "Unused", "Sketch", "Model", "Make"])
+        self.browse_stage_filter.addItems(
+            ["All", "Unused"] + sorted(self.stages.keys())
+        )
         self.browse_stage_filter.currentTextChanged.connect(self._refresh_browse)
         filt_row.addWidget(self.browse_stage_filter)
 
@@ -234,53 +306,96 @@ class IconCMS(QWidget):
         self.tabs.addTab(tab, "Browse")
 
     def _build_stage_tab(self):
-        """Tab 2: Stage-by-stage tool-icon mapping"""
+        """Tab 2: Stage-by-stage tool-icon mapping — Scandi minimal"""
         tab = QWidget()
         layout = QVBoxLayout(tab)
-        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(8)
 
-        # Stage selector
-        sel_row = QHBoxLayout()
-        sel_row.addWidget(QLabel("Stage:"))
+        # ── Stage header ──
+        hdr = QHBoxLayout()
+        hdr.setSpacing(8)
+
+        stage_lbl = QLabel("Stage")
+        stage_lbl.setStyleSheet("font-size: 10px; color: #8a9; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;")
+        hdr.addWidget(stage_lbl)
+
         self.stage_combo = QComboBox()
         self.stage_combo.addItems(list(self.stages.keys()))
         self.stage_combo.currentTextChanged.connect(self._refresh_stage)
-        sel_row.addWidget(self.stage_combo)
-        sel_row.addStretch()
+        self.stage_combo.setFixedWidth(180)
+        hdr.addWidget(self.stage_combo)
 
-        # Toolbar mockup label
+        hdr.addSpacing(12)
+
         self.stage_desc = QLabel("")
-        self.stage_desc.setStyleSheet("color: #6b6e78;")
-        sel_row.addWidget(self.stage_desc)
-        layout.addLayout(sel_row)
+        self.stage_desc.setStyleSheet("font-size: 11px; color: #556;")
+        hdr.addWidget(self.stage_desc)
 
-        # Toolbar mockup (horizontal row of icons like the actual toolbar)
+        hdr.addStretch()
+        layout.addLayout(hdr)
+
+        # ── Divider ──
+        div = QFrame()
+        div.setFrameShape(QFrame.HLine)
+        div.setStyleSheet("background: #2e2e4a; max-height: 1px;")
+        layout.addWidget(div)
+
+        # ── Toolbar mockup (icon strip) ──
+        tb_lbl = QLabel("Toolbar preview")
+        tb_lbl.setStyleSheet("font-size: 10px; color: #556; font-weight: 600; letter-spacing: 0.5px;")
+        layout.addWidget(tb_lbl)
+
         self.toolbar_mock = QWidget()
-        self.toolbar_mock.setFixedHeight(60)
-        self.toolbar_mock.setStyleSheet("background: #141517; border: 1px solid #2a2b30; border-radius: 4px;")
+        self.toolbar_mock.setFixedHeight(44)
+        self.toolbar_mock.setStyleSheet("background: #1a1a2e; border: 1px solid #2e2e4a; border-radius: 4px;")
         self.toolbar_layout = QHBoxLayout(self.toolbar_mock)
-        self.toolbar_layout.setContentsMargins(8, 4, 8, 4)
+        self.toolbar_layout.setContentsMargins(8, 0, 8, 0)
         self.toolbar_layout.setSpacing(2)
         layout.addWidget(self.toolbar_mock)
 
-        # Tool list with icon assignment
-        self.tool_list = QListWidget()
-        self.tool_list.setAlternatingRowColors(True)
-        self.tool_list.currentRowChanged.connect(self._on_tool_selected)
-        layout.addWidget(self.tool_list, 1)
+        # ── Tool list with custom rows ──
+        tool_scroll = QScrollArea()
+        tool_scroll.setWidgetResizable(True)
+        tool_scroll.setFrameShape(QFrame.NoFrame)
+        tool_scroll.setStyleSheet("QScrollArea { background: transparent; }")
 
-        # Icon picker for selected tool
-        picker_row = QHBoxLayout()
-        picker_row.addWidget(QLabel("Assign icon:"))
+        self.tool_container = QWidget()
+        self.tool_container.setStyleSheet("background: transparent;")
+        self.tool_list_layout = QVBoxLayout(self.tool_container)
+        self.tool_list_layout.setContentsMargins(0, 4, 0, 4)
+        self.tool_list_layout.setSpacing(2)
+        tool_scroll.setWidget(self.tool_container)
+        layout.addWidget(tool_scroll, 1)
+
+        # ── Icon assign bar ──
+        assign_bar = QFrame()
+        assign_bar.setStyleSheet("QFrame { background: #24243d; border: 1px solid #2e2e4a; border-radius: 4px; }")
+        assign_layout = QHBoxLayout(assign_bar)
+        assign_layout.setContentsMargins(10, 6, 10, 6)
+        assign_layout.setSpacing(8)
+
+        assign_lbl = QLabel("Assign icon")
+        assign_lbl.setStyleSheet("font-size: 10px; color: #8a9; font-weight: 600; letter-spacing: 0.5px;")
+        assign_layout.addWidget(assign_lbl)
+
         self.icon_picker = QComboBox()
         self.icon_picker.setMinimumWidth(200)
         self.icon_picker.addItems(sorted(self.icons.keys()))
         self.icon_picker.currentTextChanged.connect(self._on_icon_picked)
-        picker_row.addWidget(self.icon_picker, 1)
-        self.assign_btn = QPushButton("Assign & Save")
+        assign_layout.addWidget(self.icon_picker, 1)
+
+        self.assign_btn = QPushButton("Save")
+        self.assign_btn.setFixedHeight(24)
+        self.assign_btn.setStyleSheet(
+            "QPushButton { background: #3a9bea; border: none; border-radius: 3px; "
+            "padding: 0 14px; color: white; font-size: 10px; font-weight: 600; }"
+            "QPushButton:hover { background: #4aabfa; }"
+        )
         self.assign_btn.clicked.connect(self._assign_icon)
-        picker_row.addWidget(self.assign_btn)
-        layout.addLayout(picker_row)
+        assign_layout.addWidget(self.assign_btn)
+
+        layout.addWidget(assign_bar)
 
         self.tabs.addTab(tab, "Stage Mapping")
 
@@ -431,15 +546,355 @@ class IconCMS(QWidget):
         layout.addStretch()
         self.tabs.addTab(tab, "Generator")
 
-    # ─── Refresh methods ─────────────────────────────────────────
+    # ─── Sketch spec tab — data from sketch_tools.txt ───────────────
 
-    def _is_dark(self):
-        return True
+    SPEC_CATEGORIES = [
+        {
+            "name": "Sketch Creation & Environment",
+            "section": 2,
+            "tools": [
+                ("Create Sketch", "Creates a new 2D sketch on a selected plane or face", ""),
+                ("Finish Sketch", "Exits sketch environment and saves changes", ""),
+            ]
+        },
+        {
+            "name": "Create — Basic Geometry",
+            "section": 3,
+            "tools": [
+                ("Line",    "Straight line segments (L)", "line"),
+                ("Circle",  "Center-diameter or 2-point (C)", "circle"),
+                ("Arc",     "3-point, center-point, or tangent arc (A)", "arc"),
+                ("Rectangle", "2-point, 3-point, center, or centered (R)", "rectangle"),
+                ("Polygon", "Regular polygon, 3-64 sides", "polygon"),
+                ("Ellipse", "Oval shape, major/minor radii", "ellipse"),
+                ("Slot",    "Rounded rectangle / oblong hole", "slot"),
+                ("Spline",  "Smooth curve through control points", "spline"),
+                ("Point",   "Construction reference point", "point"),
+            ]
+        },
+        {
+            "name": "Text Tool",
+            "section": 3,
+            "tools": [
+                ("Text", "Text for engraving/embossing — height, font, bold/italic", "text"),
+            ]
+        },
+        {
+            "name": "Modify Tools",
+            "section": 4,
+            "tools": [
+                ("Trim",    "Removes lines up to intersection boundaries (T)", "trim"),
+                ("Extend",  "Extends line to nearest boundary", "extend"),
+                ("Offset",  "Parallel copy at specified distance", "offset"),
+                ("Move/Copy", "Translate or rotate geometry (M)", "move"),
+                ("Rotate",  "Rotates geometry about a point", "rotate"),
+                ("Scale",   "Resizes about a reference point", "scale"),
+                ("Fillet",  "Rounds corners with specified radius (F)", "fillet"),
+                ("Chamfer", "Bevels corners with specified distances", "chamfer"),
+                ("Break",   "Splits geometry into segments at selected points", ""),
+            ]
+        },
+        {
+            "name": "Pattern Tools",
+            "section": 5,
+            "tools": [
+                ("Rectangular Pattern", "Array of copies in grid formation (X×Y)", "pattern"),
+                ("Circular Pattern",    "Array of copies around a center point", "pattern"),
+                ("Mirror",  "Mirrored copy across symmetry line", "mirror"),
+            ]
+        },
+        {
+            "name": "Constraints",
+            "section": 6,
+            "tools": [
+                ("Coincident",  "Forces two points to share the same location", "coincident"),
+                ("Horizontal",  "Forces line to be exactly horizontal", "horizontal"),
+                ("Vertical",    "Forces line to be exactly vertical", "vertical"),
+                ("Parallel",    "Forces two lines to run in the same direction", "parallel"),
+                ("Perpendicular","Forces two lines to meet at 90°", "perpendicular"),
+                ("Tangent",     "Forces curve to touch another smoothly", "tangent"),
+                ("Equal",       "Forces lengths or radii to be identical", "equal"),
+                ("Concentric",  "Forces circles/arcs to share center", "concentric"),
+                ("Collinear",   "Forces lines to lie on the same infinite line", "collinear"),
+                ("Fix/Coincident", "Locks entity position", "fix"),
+                ("Midpoint",    "Forces point to midpoint of line", "midpoint"),
+                ("Symmetric",   "Forces symmetry across centerline", "symmetric"),
+                ("Curvature",   "Maintains curvature continuity (G2) between splines", "curvature"),
+            ]
+        },
+        {
+            "name": "Dimension Tools",
+            "section": 7,
+            "tools": [
+                ("Distance",  "Linear distance between two points or line length (D)", "dimension"),
+                ("Radius",    "Radius of arc or fillet", "dimension"),
+                ("Diameter",  "Diameter of circle", "dimension"),
+                ("Angle",     "Angle between two lines", "dimension"),
+            ]
+        },
+        {
+            "name": "Construction & Reference",
+            "section": 8,
+            "tools": [
+                ("Construction Geometry", "Reference geometry — dashed lines, not a profile (X)", ""),
+                ("Centerline", "Axis geometry that participates in profiles", ""),
+                ("Project",   "Projects 3D edges/faces onto sketch plane (P)", ""),
+                ("Project Cut Edges", "Projects intersection of plane with bodies", ""),
+            ]
+        },
+        {
+            "name": "Inspection & Display",
+            "section": 9,
+            "tools": [
+                ("Measure",       "Measures distances between entities", "measure"),
+                ("Sketch Palette","Grids, snaps, profile/point display options", ""),
+                ("Profile Display","Shows closed profiles with blue highlighting", ""),
+                ("Points Display", "Shows all sketch points to identify gaps", ""),
+            ]
+        },
+    ]
+
+
+    # Map spec tool name → FissionCAD tool ID (from SketchTool enum)
+    SPEC_TOOL_TO_ID = {
+        "Line":     1, "Rectangle": 2, "Circle": 3,
+        "Dimension":4, "Arc": 6, "Fillet": 7,
+        "Trim":     8, "Polygon": 13, "Slot": 14,
+        "Point":    15, "Text": 16, "Offset": 17,
+        "Mirror":   18, "Extend": 21, "Move/Copy": 22,
+        "Rotate":   23, "Scale": 24, "Measure": 25,
+        "Spline":   11, "Ellipse": 12, "Chamfer": 20,
+        "Pattern":  19,
+    }.get  # use .get for safe lookup with default None
+
+    # Simple name → tool ID map
+    SPEC_NAME_TO_ID = {
+        "Line": 1, "Rectangle": 2, "Circle": 3,
+        "Arc": 6, "Fillet": 7, "Trim": 8,
+        "Polygon": 13, "Slot": 14, "Point": 15,
+        "Text": 16, "Offset": 17, "Mirror": 18,
+        "Extend": 21, "Move/Copy": 22,
+        "Rotate": 23, "Scale": 24, "Measure": 25,
+        "Spline": 11, "Ellipse": 12, "Chamfer": 20,
+        "Rectangular Pattern": 19, "Circular Pattern": 19,
+    }
+
+    def _build_spec_tab(self):
+        """Tab 5: Spec Reference — render sketch_tools.txt categories with icon previews"""
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(6)
+
+        # ── Header ──
+        hdr = QHBoxLayout()
+        title = QLabel("<b>Sketch Tools Spec</b>  "
+                       "<span style='color:#4a4d57;font-size:11px'>sketch_tools.txt</span>")
+        title.setStyleSheet("font-size: 16px; color: #c1c3c8;")
+        hdr.addWidget(title)
+        hdr.addStretch()
+
+        # Filter
+        self.spec_filter = QLineEdit()
+        self.spec_filter.setPlaceholderText("Filter tools...")
+        self.spec_filter.setFixedWidth(200)
+        self.spec_filter.textChanged.connect(self._refresh_spec)
+        hdr.addWidget(self.spec_filter)
+
+        self.spec_count = QLabel("")
+        self.spec_count.setStyleSheet("color: #6b6e78; font-size: 11px;")
+        hdr.addWidget(self.spec_count)
+        layout.addLayout(hdr)
+
+        # Legend
+        leg = QHBoxLayout()
+        leg.setSpacing(16)
+        leg.addWidget(self._spec_legend_dot("#2e7d32", "Implemented"))
+        leg.addWidget(self._spec_legend_dot("#6b6e78", "Not yet implemented"))
+        leg.addWidget(self._spec_legend_dot("#4a4d57", "No icon assigned"))
+        leg.addStretch()
+
+        # Status color key
+        for txt, color in [("Fully Constrained", "black"), ("Under-constrained", "#4fc3f7")]:
+            lbl = QLabel(f'<span style="color:{color}">●</span> {txt}')
+            lbl.setStyleSheet("color: #6b6e78; font-size: 10px;")
+            leg.addWidget(lbl)
+        self.spec_legend_shortcuts = QLabel("")
+        self.spec_legend_shortcuts.setStyleSheet("color: #4a4d57; font-size: 10px;")
+        leg.addWidget(self.spec_legend_shortcuts)
+        layout.addLayout(leg)
+
+        # ── Scrollable spec content ──
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        self.spec_container = QWidget()
+        self.spec_container_layout = QVBoxLayout(self.spec_container)
+        self.spec_container_layout.setSpacing(8)
+        scroll.setWidget(self.spec_container)
+        layout.addWidget(scroll, 1)
+
+        self.tabs.addTab(tab, "Spec Reference")
+
+    def _spec_legend_dot(self, color, text):
+        return QLabel(f'<span style="color:{color};font-size:14px">●</span>'
+                      f' <span style="color:#6b6e78;font-size:10px">{text}</span>')
+
+    def _refresh_spec(self):
+        """Rebuild the spec tab content with filter applied"""
+        # Clear
+        while self.spec_container_layout.count():
+            item = self.spec_container_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        filter_text = self.spec_filter.text().lower()
+        total_tools = 0
+        shown_tools = 0
+
+        # Build shortcuts legend from spec shortcuts
+        import re
+        spec_text = open(os.path.join(FC_DIR, "sketch_tools.txt")).read()
+        # Extract from the shortcut key table in the spec
+        sc_match = re.search(r'## 11\. Common Shortcut Keys.*?(?=\n##|\Z)', spec_text, re.DOTALL)
+        shortcuts = []
+        if sc_match:
+            for m in re.finditer(r'\|\s*`([^`]+)`\s*\|\s*(\S[\w/ ]+?)\s*\|', sc_match.group()):
+                shortcuts.append(f"<b>{m.group(1)}</b>={m.group(2)}")
+        sc_text = "  ".join(shortcuts[:6])
+        if sc_text:
+            self.spec_legend_shortcuts.setText(f"<span style='color:#4a4d57'>Shortcuts:</span> {sc_text}")
+
+        for cat in self.SPEC_CATEGORIES:
+            # Filter
+            cat_tools = []
+            for name, desc, icon_name in cat["tools"]:
+                total_tools += 1
+                if filter_text and filter_text not in name.lower() and filter_text not in icon_name.lower():
+                    continue
+                cat_tools.append((name, desc, icon_name))
+            if not cat_tools and filter_text:
+                continue
+
+            section = self._build_spec_category(cat["name"], cat_tools)
+            self.spec_container_layout.addWidget(section)
+            shown_tools += len(cat_tools)
+
+        self.spec_container_layout.addStretch()
+        self.spec_count.setText(f"{shown_tools}/{total_tools} tools")
+
+    def _build_spec_category(self, cat_name, tools):
+        """Build a card for one spec category showing its tools"""
+        w = QWidget()
+        w.setStyleSheet("background: #1e1f2a; border: 1px solid #2a2b30; border-radius: 6px;")
+
+        layout = QVBoxLayout(w)
+        layout.setContentsMargins(10, 8, 10, 8)
+        layout.setSpacing(4)
+
+        hdr = QLabel(f"<b>{cat_name}</b>")
+        hdr.setStyleSheet("color: #4fc3f7; font-size: 13px; padding: 2px 0;")
+        layout.addWidget(hdr)
+
+        grid = QGridLayout()
+        grid.setSpacing(4)
+        col = 0
+        row = 0
+
+        for name, desc, icon_name in tools:
+            cell = self._build_spec_tool_cell(name, desc, icon_name)
+            grid.addWidget(cell, row, col)
+            col += 1
+            if col >= 4:
+                col = 0
+                row += 1
+
+        layout.addLayout(grid)
+        return w
+
+    def _build_spec_tool_cell(self, name, desc, icon_name):
+        """Build a single tool cell with icon preview, name, FC status"""
+        cell = QFrame()
+        cell.setFixedHeight(72)
+        cell.setStyleSheet("""
+            QFrame { background: #25263a; border: 1px solid transparent; border-radius: 4px; }
+            QFrame:hover { border-color: #4a9eff66; }
+        """)
+
+        layout = QHBoxLayout(cell)
+        layout.setContentsMargins(6, 4, 6, 4)
+        layout.setSpacing(8)
+
+        icon_preview = QLabel()
+        icon_preview.setFixedSize(40, 40)
+        icon_preview.setAlignment(Qt.AlignCenter)
+
+        fc_icon_file = f"{icon_name}.svg" if icon_name else ""
+        svg = self.icons.get(fc_icon_file, "")
+        fc_icon_exists = bool(svg)
+
+        if svg:
+            pix = render_svg_to_pixmap(svg, 36, self._is_dark)
+            icon_preview.setPixmap(pix)
+        else:
+            icon_preview.setStyleSheet("background: #1a1b1e; border: 1px dashed #3a3b4e; border-radius: 4px;")
+
+        layout.addWidget(icon_preview)
+
+        text_col = QVBoxLayout()
+        text_col.setSpacing(1)
+
+        name_row = QHBoxLayout()
+        name_row.setSpacing(6)
+
+        tool_id = self.SPEC_NAME_TO_ID.get(name)
+        has_fc_impl = tool_id is not None and tool_id >= 0
+        has_icon = fc_icon_exists and icon_name
+
+        if has_fc_impl and has_icon:
+            status_color = "#2e7d32"
+            status_text = "✓"
+        elif has_fc_impl:
+            status_color = "#4a4d57"
+            status_text = "no icon"
+        else:
+            status_color = "#6b6e78"
+            status_text = "⚡"
+
+        badge = QLabel(f'<span style="color:{status_color};font-weight:bold;font-size:10px">{status_text}</span>')
+        name_row.addWidget(badge)
+
+        ttl = QLabel(f"<b style='color:#c1c3c8;font-size:11px'>{name}</b>")
+        name_row.addWidget(ttl)
+
+        if tool_id is not None:
+            id_lbl = QLabel(f'<span style="color:#4a4d57;font-size:9px">ID {tool_id}</span>')
+            name_row.addWidget(id_lbl)
+
+        name_row.addStretch()
+        text_col.addLayout(name_row)
+
+        desc_lbl = QLabel(desc)
+        desc_lbl.setWordWrap(True)
+        desc_lbl.setStyleSheet("color: #6b6e78; font-size: 10px;")
+        text_col.addWidget(desc_lbl)
+
+        layout.addLayout(text_col, 1)
+        cell.setToolTip(f"{name}: {desc}\nIcon: {icon_name or '(none)'}\nFC Tool ID: {tool_id or 'Not mapped'}")
+
+        return cell
+
+    def _apply_theme(self):
+        """Swap the entire UI stylesheet between dark and light."""
+        self.setStyleSheet(self.DARK_QSS if self._is_dark else self.LIGHT_QSS)
+        self.dark_btn.setText("Dark" if self._is_dark else "Light")
 
     def _refresh_all(self):
         self._refresh_browse()
         self._refresh_stage()
         self._populate_editor_list()
+        if hasattr(self, 'spec_container_layout'):
+            self._refresh_spec()
 
     def _refresh_browse(self):
         """Rebuild the browse tab icon grid with filtering"""
@@ -490,12 +945,77 @@ class IconCMS(QWidget):
             self.editor_icon_list.setCurrentItem(items[0])
             self._on_editor_icon_selected(items[0])
 
+    def _build_tool_row(self, tool, index):
+        """Build a Scandi tool row: icon + name + filename + shortcut"""
+        row = QFrame()
+        row.setObjectName(f"tool_row_{index}")
+        row.setFixedHeight(32)
+        row.setStyleSheet(
+            "QFrame { background: transparent; border: none; border-radius: 3px; }"
+            "QFrame:hover { background: #2e2e4a; }"
+        )
+
+        rl = QHBoxLayout(row)
+        rl.setContentsMargins(8, 0, 8, 0)
+        rl.setSpacing(8)
+
+        # Click indicator / selection dot
+        self._tool_dots[index] = QLabel("○")
+        self._tool_dots[index].setFixedWidth(14)
+        self._tool_dots[index].setStyleSheet("color: #556; font-size: 10px;")
+        rl.addWidget(self._tool_dots[index])
+
+        # Icon preview
+        icon_preview = QLabel()
+        icon_preview.setFixedSize(22, 22)
+        svg_content = self.icons.get(tool["icon"], "")
+        if svg_content:
+            pix = render_svg_to_pixmap(svg_content, 20, self._is_dark)
+            icon_preview.setPixmap(pix)
+        else:
+            icon_preview.setStyleSheet("background: #1a1a2e; border: 1px dashed #2e2e4a; border-radius: 2px;")
+        rl.addWidget(icon_preview)
+
+        # Tool name
+        name_lbl = QLabel(tool["name"])
+        name_lbl.setStyleSheet("color: #e0e0e0; font-size: 12px; font-weight: 500;")
+        rl.addWidget(name_lbl)
+
+        rl.addSpacing(12)
+
+        # Icon filename (muted)
+        icon_lbl = QLabel(tool["icon"])
+        icon_lbl.setStyleSheet("color: #556; font-size: 10px;")
+        rl.addWidget(icon_lbl)
+
+        rl.addStretch()
+
+        # Shortcut (muted, monospace)
+        sc = tool.get("shortcut", "")
+        sc_text = f"[{sc}]" if sc else ""
+        sc_lbl = QLabel(sc_text)
+        sc_lbl.setStyleSheet("color: #445; font-family: monospace; font-size: 10px;")
+        sc_lbl.setFixedWidth(60)
+        sc_lbl.setAlignment(Qt.AlignRight)
+        rl.addWidget(sc_lbl)
+
+        # Arrow indicator
+        arrow = QLabel("→")
+        arrow.setStyleSheet("color: #2e2e4a; font-size: 10px;")
+        arrow.setFixedWidth(16)
+        arrow.setAlignment(Qt.AlignCenter)
+        rl.addWidget(arrow)
+
+        # Make row clickable
+        row.mousePressEvent = lambda e, idx=index: self._on_tool_row_clicked(idx)
+
+        return row
+
     def _refresh_stage(self):
-        """Refresh the stage mapping tab"""
+        """Refresh the stage mapping tab — Scandi tool rows"""
         stage = self.stage_combo.currentText()
         tools = self.stages.get(stage, [])
 
-        self.tool_list.clear()
         self.stage_desc.setText(f"{len(tools)} tools")
 
         # Clear toolbar mockup
@@ -504,53 +1024,94 @@ class IconCMS(QWidget):
             if item.widget():
                 item.widget().deleteLater()
 
-        for t in tools:
+        # Clear tool rows
+        while self.tool_list_layout.count():
+            item = self.tool_list_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        self._tool_row_frames = []
+        self._tool_dots = {}
+        self._selected_row = -1
+
+        for i, t in enumerate(tools):
             icon_name = t["icon"]
             svg_content = self.icons.get(icon_name, "")
+
             # Toolbar button mockup
             btn = QPushButton()
-            btn.setFixedSize(28, 28)
+            btn.setFixedSize(24, 24)
             btn.setToolTip(f"{t['name']} ({t['shortcut']})")
+            btn.setStyleSheet(
+                "QPushButton { background: transparent; border: none; border-radius: 2px; }"
+                "QPushButton:hover { background: #2e2e4a; }"
+            )
             if svg_content:
-                pix = render_svg_to_pixmap(svg_content, 20, self._is_dark)
+                pix = render_svg_to_pixmap(svg_content, 18, self._is_dark)
                 btn.setIcon(QIcon(pix))
-                btn.setIconSize(QSize(18, 18))
+                btn.setIconSize(QSize(16, 16))
             self.toolbar_layout.addWidget(btn)
 
-            # List item
-            name_label = f"{t['name']:20s}  {icon_name:25s}  [{t['shortcut']}]"
-            item = QListWidgetItem(name_label)
-            item.setData(Qt.UserRole, t["icon"])
-            self.tool_list.addItem(item)
+            # Custom tool row
+            row = self._build_tool_row(t, i)
+            self._tool_row_frames.append(row)
+            self.tool_list_layout.addWidget(row)
 
         self.toolbar_layout.addStretch()
 
-    def _on_tool_selected(self, row):
-        if row < 0:
+        # Select first tool by default
+        if self._tool_row_frames:
+            self._on_tool_row_clicked(0)
+
+    def _on_tool_row_clicked(self, index):
+        """Handle a Scandi tool row click"""
+        if index < 0 or index >= len(self._tool_row_frames):
             return
-        item = self.tool_list.item(row)
-        if not item:
-            return
-        current_icon = item.data(Qt.UserRole)
-        idx = self.icon_picker.findText(current_icon)
-        if idx >= 0:
-            self.icon_picker.setCurrentIndex(idx)
+
+        # Deselect old
+        if self._selected_row >= 0 and self._selected_row < len(self._tool_row_frames):
+            old_row = self._tool_row_frames[self._selected_row]
+            old_row.setStyleSheet(
+                "QFrame { background: transparent; border: none; border-radius: 3px; }"
+                "QFrame:hover { background: #2e2e4a; }"
+            )
+            if self._selected_row in self._tool_dots:
+                self._tool_dots[self._selected_row].setStyleSheet("color: #556; font-size: 10px;")
+
+        # Select new
+        self._selected_row = index
+        row = self._tool_row_frames[index]
+        row.setStyleSheet(
+            "QFrame { background: #24243d; border: 1px solid #3a9bea; border-radius: 3px; }"
+            "QFrame:hover { background: #2a2a4f; }"
+        )
+        if index in self._tool_dots:
+            self._tool_dots[index].setStyleSheet("color: #3a9bea; font-size: 10px;")
+
+        # Update icon picker
+        stage = self.stage_combo.currentText()
+        tools = self.stages.get(stage, [])
+        if index < len(tools):
+            current_icon = tools[index]["icon"]
+            idx = self.icon_picker.findText(current_icon)
+            if idx >= 0:
+                self.icon_picker.setCurrentIndex(idx)
 
     def _on_icon_picked(self, name):
         pass
 
     def _assign_icon(self):
         """Assign a new icon to a tool and save to source file"""
-        row = self.tool_list.currentRow()
-        if row < 0:
+        if self._selected_row < 0:
             QMessageBox.warning(self, "No tool", "Select a tool first")
             return
 
         stage = self.stage_combo.currentText()
         tools = self.stages[stage]
-        if row >= len(tools):
+        if self._selected_row >= len(tools):
             return
 
+        row = self._selected_row
         tool = tools[row]
         old_icon = tool["icon"]
         new_icon = self.icon_picker.currentText()
@@ -650,13 +1211,14 @@ class IconCMS(QWidget):
 
     def _toggle_theme(self):
         self._is_dark = not self._is_dark
-        self.dark_btn.setText("Dark" if self._is_dark else "Light")
-        # Rebuild previews
-        if hasattr(self, '_current_editing'):
-            svg = getattr(self, '_original_svg', "")
-            if svg:
-                self._update_editor_previews(svg)
-        self._refresh_browse()
+        self._apply_theme()
+        # Rebuild all icon previews for the new theme
+        self._refresh_all()
+        # Force rebuild the stage mapping and spec reference lists
+        if hasattr(self, 'stage_combo'):
+            self._refresh_stage()
+        if hasattr(self, 'spec_container_layout'):
+            self._refresh_spec()
 
     def _generate_template(self, template):
         """Generate icon from template and switch to generator tab"""
