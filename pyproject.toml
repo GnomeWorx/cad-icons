@@ -1,0 +1,5 @@
+[project]
+name = "cad-icons"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["PyQt5>=5.15"]
