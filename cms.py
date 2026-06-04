@@ -7,6 +7,7 @@ and lets you edit/generate/export SVG icons for every tool.
 """
 
 import sys, os, math, json, re, subprocess, shutil
+import markdown  # For .md → HTML conversion
 from pathlib import Path
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QGridLayout, QLabel, QScrollArea,
@@ -682,18 +683,29 @@ class IconCMS(QWidget):
         "Rectangular Pattern": 19, "Circular Pattern": 19,
     }
 
-    def _build_sketch_spec_tab(self):
-        """Tab 5: Sketch tools spec as HTML reference with unique ref IDs"""
+    def _load_md_spec(self, path, name):
+        """Load a .md spec file, convert to HTML, and display in QTextBrowser"""
         tab = QWidget()
         layout = QVBoxLayout(tab)
         layout.setContentsMargins(8, 8, 8, 8)
 
         hdr = QHBoxLayout()
-        title = QLabel("<b>Sketch Tools Spec</b>  "
-                       "<span style='color:#4a4d57;font-size:11px'>sketch_tools.txt</span>")
+        title = QLabel(f"<b>{name}</b>  "
+                       f"<span style='color:#4a4d57;font-size:11px'>{os.path.basename(path)}</span>")
         title.setStyleSheet("font-size: 16px; color: #c1c3c8;")
         hdr.addWidget(title)
         hdr.addStretch()
+
+        refresh_btn = QPushButton("⟳ Reload")
+        refresh_btn.setFixedWidth(100)
+        refresh_btn.setStyleSheet("""
+            QPushButton {
+                background: #21262d; color: #c9d1d9; border: 1px solid #30363d;
+                border-radius: 6px; padding: 4px 12px; font-size: 12px;
+            }
+            QPushButton:hover { background: #30363d; }
+        """)
+        hdr.addWidget(refresh_btn)
         layout.addLayout(hdr)
 
         viewer = QTextBrowser()
@@ -707,85 +719,61 @@ class IconCMS(QWidget):
                 font-size: 14px;
             }
         """)
-        html_path = os.path.join(os.path.dirname(__file__), "refs", "sketch_spec.html")
-        if os.path.exists(html_path):
-            with open(html_path) as f:
-                viewer.setHtml(f.read())
-        else:
-            viewer.setPlainText("sketch_spec.html not found in refs/")
         layout.addWidget(viewer, 1)
 
-        self.tabs.addTab(tab, "Sketch Spec")
+        def load_content():
+            if os.path.exists(path):
+                with open(path) as f:
+                    md_text = f.read()
+                # Convert .md to HTML with tables extension
+                html = markdown.markdown(md_text, extensions=['tables'])
+                # Wrap in a dark-themed page
+                full_html = f"""<!DOCTYPE html><html><head>
+<style>
+body {{ background: #0d1117; color: #c9d1d9; font-family: 'Inter', 'Segoe UI', sans-serif; font-size: 14px; padding: 16px; }}
+h1 {{ color: #58a6ff; font-size: 24px; border-bottom: 1px solid #21262d; padding-bottom: 8px; }}
+h2 {{ color: #f0883e; font-size: 18px; margin-top: 24px; border-bottom: 1px solid #21262d; padding-bottom: 4px; }}
+table {{ border-collapse: collapse; width: 100%; margin: 8px 0; }}
+th {{ background: #161b22; color: #8b949e; font-size: 12px; text-transform: uppercase; padding: 8px 12px; border: 1px solid #30363d; text-align: left; font-weight: 600; }}
+td {{ padding: 6px 12px; border: 1px solid #30363d; }}
+tr:nth-child(even) td {{ background: #0d1117; }}
+tr:nth-child(odd) td {{ background: #161b22; }}
+code {{ background: #222; color: #ffa657; padding: 1px 6px; border-radius: 3px; font-size: 12px; }}
+hr {{ border: none; border-top: 1px solid #21262d; margin: 24px 0; }}
+em {{ color: #8b949e; }}
+strong {{ color: #f0f6fc; }}
+</style></head><body>
+{html}
+</body></html>"""
+                viewer.setHtml(full_html)
+            else:
+                viewer.setPlainText(f"Spec file not found: {path}")
+
+        refresh_btn.clicked.connect(load_content)
+        load_content()
+
+        self.tabs.addTab(tab, name)
+
+    def _build_sketch_spec_tab(self):
+        """Tab 5: Sketch tools spec as .md → HTML reference"""
+        md_path = os.path.join(os.path.dirname(__file__), "refs", "sketch_spec.md")
+        if not os.path.exists(md_path):
+            md_path = os.path.join(FC_DIR, "sketch_spec.md")
+        self._load_md_spec(md_path, "Sketch Spec")
 
     def _build_model_spec_tab(self):
-        """Tab 6: Model (Plastic) spec as HTML reference"""
-        tab = QWidget()
-        layout = QVBoxLayout(tab)
-        layout.setContentsMargins(8, 8, 8, 8)
-
-        hdr = QHBoxLayout()
-        title = QLabel("<b>Plastic Model Spec</b>  "
-                       "<span style='color:#4a4d57;font-size:11px'>model_tools.txt</span>")
-        title.setStyleSheet("font-size: 16px; color: #c1c3c8;")
-        hdr.addWidget(title)
-        hdr.addStretch()
-        layout.addLayout(hdr)
-
-        viewer = QTextBrowser()
-        viewer.setOpenExternalLinks(True)
-        viewer.setStyleSheet("""
-            QTextBrowser {
-                background-color: #0d1117;
-                color: #c9d1d9;
-                border: none;
-                font-family: 'Inter', 'Segoe UI', sans-serif;
-                font-size: 14px;
-            }
-        """)
-        html_path = os.path.join(os.path.dirname(__file__), "refs", "model_spec.html")
-        if os.path.exists(html_path):
-            with open(html_path) as f:
-                viewer.setHtml(f.read())
-        else:
-            viewer.setPlainText("model_spec.html not found in refs/")
-        layout.addWidget(viewer, 1)
-
-        self.tabs.addTab(tab, "Model Spec")
+        """Tab 6: Model (Plastic) spec as .md → HTML reference"""
+        md_path = os.path.join(os.path.dirname(__file__), "refs", "model_spec.md")
+        if not os.path.exists(md_path):
+            md_path = os.path.join(FC_DIR, "model_spec.md")
+        self._load_md_spec(md_path, "Model Spec")
 
     def _build_make_spec_tab(self):
-        """Tab 7: Make (3D Printing) spec as HTML reference"""
-        tab = QWidget()
-        layout = QVBoxLayout(tab)
-        layout.setContentsMargins(8, 8, 8, 8)
-
-        hdr = QHBoxLayout()
-        title = QLabel("<b>3D Print Make Spec</b>  "
-                       "<span style='color:#4a4d57;font-size:11px'>make_tools.txt</span>")
-        title.setStyleSheet("font-size: 16px; color: #c1c3c8;")
-        hdr.addWidget(title)
-        hdr.addStretch()
-        layout.addLayout(hdr)
-
-        viewer = QTextBrowser()
-        viewer.setOpenExternalLinks(True)
-        viewer.setStyleSheet("""
-            QTextBrowser {
-                background-color: #0d1117;
-                color: #c9d1d9;
-                border: none;
-                font-family: 'Inter', 'Segoe UI', sans-serif;
-                font-size: 14px;
-            }
-        """)
-        html_path = os.path.join(os.path.dirname(__file__), "refs", "make_spec.html")
-        if os.path.exists(html_path):
-            with open(html_path) as f:
-                viewer.setHtml(f.read())
-        else:
-            viewer.setPlainText("make_spec.html not found in refs/")
-        layout.addWidget(viewer, 1)
-
-        self.tabs.addTab(tab, "Make Spec")
+        """Tab 7: Make (3D Printing) spec as .md → HTML reference"""
+        md_path = os.path.join(os.path.dirname(__file__), "refs", "make_spec.md")
+        if not os.path.exists(md_path):
+            md_path = os.path.join(FC_DIR, "make_spec.md")
+        self._load_md_spec(md_path, "Make Spec")
 
     def _refresh_spec(self):
         """Rebuild the spec tab content with filter applied"""
