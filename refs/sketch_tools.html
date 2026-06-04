@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FissionCAD — Sketch Tools Spec</title>
+<style>
+  body {
+    background: #0d1117;
+    color: #c9d1d9;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  h1 { color: #58a6ff; font-size: 24px; border-bottom: 1px solid #30363d; padding-bottom: 8px; }
+  h2 { color: #58a6ff; font-size: 18px; margin-top: 24px; }
+  h3 { color: #c9d1d9; font-size: 15px; margin-top: 20px; }
+  hr { border: none; border-top: 1px solid #30363d; margin: 20px 0; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+  th { background: #161b22; color: #58a6ff; padding: 8px 12px; text-align: left; border: 1px solid #30363d; font-weight: 600; white-space: nowrap; }
+  td { padding: 6px 12px; border: 1px solid #30363d; }
+  tr:nth-child(even) { background: #161b22; }
+  tr:hover { background: #1c2333; }
+  td:first-child, th:first-child { color: #f0883e; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-weight: 700; white-space: nowrap; width: 80px; }
+  code { background: #1c2333; color: #ffa657; padding: 2px 6px; border-radius: 3px; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 13px; }
+  pre code { background: #161b22; display: block; padding: 12px; overflow-x: auto; }
+  li { margin: 4px 0; }
+  p { margin: 8px 0; }
+  strong { color: #e6edf3; }
+</style>
+</head>
+<body>
+<h1>Specification: Fusion 360 Sketch Tools</h1>
+
+<h2>1. Overview</h2>
+<p>The Fusion 360 Sketch environment provides tools for creating and editing 2D geometry that serves as the foundation for 3D features. This specification documents all primary sketch tools organized by functional category.</p>
+
+<hr>
+
+<h2>2. Sketch Creation & Environment Setup</h2>
+
+<table>
+<thead><tr><th>Ref</th><th>Tool</th><th>Function</th><th>Activation</th></tr></thead>
+<tbody>
+<tr><td><strong>SK-001</strong>  <strong>Create Sketch</strong></td><td>Creates a new 2D sketch on a selected plane or face</td><td>Toolbar → Create Sketch or right-click → Create Sketch</td></tr>
+<tr><td><strong>SK-002</strong>  <strong>Finish Sketch</strong></td><td>Exits sketch environment and saves changes</td><td>Toolbar → Finish Sketch</td></tr>
+
+<p><strong>Environment Notes</strong> :</p>
+<li>Blue geometry = Under-defined (missing constraints/dimensions)</li>
+<li>Black geometry = Fully defined</li>
+<li>Use <code>S</code> key to open shortcut menu for quick tool access</li>
+
+</tbody></table>
+<hr>
+
+<h2>3. Create Tools (Geometry Generation)</h2>
+
+<h3>3.1 Basic Geometry</h3>
+
+<table>
+<thead><tr><th>Ref</th><th>Tool</th><th>Function</th><th>Key Parameters</th></tr></thead>
+<tbody>
+<tr><td><strong>SK-003</strong>  <strong>Line</strong></td><td>Creates straight line segments</td><td>Start point, end point, length</td></tr>
+<tr><td><strong>SK-004</strong>  <strong>Circle</strong></td><td>Center-diameter or 2-point circle</td><td>Center point, radius/diameter</td></tr>
+<tr><td><strong>SK-005</strong>  <strong>Arc</strong></td><td>3-point, center-point, or tangent arc</td><td>Start, end, radius/center</td></tr>
+<tr><td><strong>SK-006</strong>  <strong>Rectangle</strong></td><td>2-point, 3-point, center, or centered rectangle</td><td>Corner points, dimensions</td></tr>
+<tr><td><strong>SK-007</strong>  <strong>Polygon</strong></td><td>Regular polygon (3-64 sides)</td><td>Center, radius, side count, rotation angle</td></tr>
+<tr><td><strong>SK-008</strong>  <strong>Ellipse</strong></td><td>Oval shape</td><td>Center, major radius, minor radius, rotation angle</td></tr>
+<tr><td><strong>SK-009</strong>  <strong>Slot</strong></td><td>Rounded rectangle/oblong hole</td><td>Center, length, width, rotation, type (overall or center-to-center)</td></tr>
+<tr><td><strong>SK-010</strong>  <strong>Spline</strong></td><td>Smooth curve through control points</td><td>Array of points, closed/open option</td></tr>
+<tr><td><strong>SK-011</strong>  <strong>Point</strong></td><td>Construction reference point</td><td>X, Y coordinates</td></tr>
+
+</tbody></table>
+<h3>3.2 Text Tool</h3>
+
+<table>
+<thead><tr><th>Ref</th><th>Tool</th><th>Function</th><th>Parameters</th></tr></thead>
+<tbody>
+<tr><td><strong>SK-012</strong>  <strong>Text</strong></td><td>Adds text for engraving/embossing</td><td>Content, position, height, font, bold/italic</td></tr>
+
+<p><strong>Shortcut Keys</strong> :</p>
+<li><code>C</code> = Circle</li>
+<li><code>L</code> = Line</li>
+<li><code>X</code> = Construction toggle</li>
+<li><code>P</code> = Project</li>
+
+</tbody></table>
+<hr>
+
+<h2>4. Modify Tools</h2>
+
+<table>
+<thead><tr><th>Ref</th><th>Tool</th><th>Function</th><th>Operation</th></tr></thead>
+<tbody>
+<tr><td><strong>SK-013</strong>  <strong>Trim</strong></td><td>Removes excess sketch lines up to intersection boundaries</td><td>Click segment to remove</td></tr>
+<tr><td><strong>SK-014</strong>  <strong>Extend</strong></td><td>Extends line to nearest boundary</td><td>Click line near end to extend</td></tr>
+<tr><td><strong>SK-015</strong>  <strong>Offset</strong></td><td>Creates parallel copy of geometry at specified distance</td><td>Select geometry, set distance, chain selection option</td></tr>
+<tr><td><strong>SK-016</strong>  <strong>Move/Copy</strong></td><td>Translates or rotates geometry</td><td>Select entities, specify displacement vector/angle</td></tr>
+<tr><td><strong>SK-017</strong>  <strong>Rotate</strong></td><td>Rotates geometry about point</td><td>Select entities, center point, angle</td></tr>
+<tr><td><strong>SK-018</strong>  <strong>Scale</strong></td><td>Resizes geometry about reference point</td><td>Select entities, base point, scale factor</td></tr>
+<tr><td><strong>SK-019</strong>  <strong>Fillet</strong></td><td>Rounds corners with specified radius</td><td>Select corner/intersection, radius value</td></tr>
+<tr><td><strong>SK-020</strong>  <strong>Chamfer</strong></td><td>Bevels corners with specified distances</td><td>Select corner, equal distance or two distances</td></tr>
+<tr><td><strong>SK-021</strong>  <strong>Break</strong></td><td>Splits geometry into segments at selected points</td><td>Select geometry, click split points</td></tr>
+
+<p><strong>Shortcut Keys</strong> :</p>
+<li><code>T</code> = Trim</li>
+<li><code>M</code> = Move</li>
+<li><code>Q</code> = Extrude (exits sketch)</li>
+
+</tbody></table>
+<hr>
+
+<h2>5. Pattern Tools</h2>
+
+<table>
+<thead><tr><th>Ref</th><th>Tool</th><th>Function</th><th>Parameters</th></tr></thead>
+<tbody>
+<tr><td><strong>SK-022</strong>  <strong>Rectangular Pattern</strong></td><td>Creates array of copies in grid formation</td><td>X count, Y count, X spacing, Y spacing</td></tr>
+<tr><td><strong>SK-023</strong>  <strong>Circular Pattern</strong></td><td>Creates array of copies around center point</td><td>Center point, instance count, total angle</td></tr>
+<tr><td><strong>SK-024</strong>  <strong>Mirror</strong></td><td>Creates mirrored copy across symmetry line</td><td>Geometry to mirror, mirror line</td></tr>
+
+</tbody></table>
+<hr>
+
+<h2>6. Constraint Tools (Geometric Relationships)</h2>
+
+<p>Constraints enforce geometric relationships between sketch entities . These are rules—not dimensions—that control how geometry relates.</p>
+
+<table>
+<thead><tr><th>Ref</th><th>Constraint</th><th>Icon</th><th>Function</th></tr></thead>
+<tbody>
+<tr><td><strong>SK-025</strong>  <strong>Coincident</strong></td><td>●</td><td>Forces two points to share the same location</td></tr>
+<tr><td><strong>SK-026</strong>  <strong>Horizontal</strong></td><td>↔</td><td>Forces line to be exactly horizontal</td></tr>
+<tr><td><strong>SK-027</strong>  <strong>Vertical</strong></td><td>↕</td><td>Forces line to be exactly vertical</td></tr>
+<tr><td><strong>SK-028</strong>  <strong>Parallel</strong></td><td>∥</td><td>Forces two lines to run in same direction</td></tr>
+<tr><td><strong>SK-029</strong>  <strong>Perpendicular</strong></td><td>⟂</td><td>Forces two lines to meet at 90°</td></tr>
+<tr><td><strong>SK-030</strong>  <strong>Tangent</strong></td><td>○—</td><td>Forces curve to touch another curve smoothly at one point</td></tr>
+<tr><td><strong>SK-031</strong>  <strong>Equal</strong></td><td>≡</td><td>Forces lengths or radii to be identical</td></tr>
+<tr><td><strong>SK-032</strong>  <strong>Concentric</strong></td><td>◎</td><td>Forces circles/arcs to share center point</td></tr>
+<tr><td><strong>SK-033</strong>  <strong>Collinear</strong></td><td>—</td><td>Forces lines to lie on same infinite line</td></tr>
+<tr><td><strong>SK-034</strong>  <strong>Fix</strong></td><td>📌</td><td>Locks entity position</td></tr>
+<tr><td><strong>SK-035</strong>  <strong>Midpoint</strong></td><td>◇</td><td>Forces point to midpoint of line</td></tr>
+<tr><td><strong>SK-036</strong>  <strong>Symmetric</strong></td><td>⇄</td><td>Forces symmetry across centerline</td></tr>
+<tr><td><strong>SK-037</strong>  <strong>Curvature</strong></td><td>()</td><td>Maintains curvature continuity between splines (G2)</td></tr>
+
+<p><strong>Constraint Status Colors</strong> :</p>
+<li><strong>Black</strong> = Fully constrained</li>
+<li><strong>Blue</strong> = Under-constrained (free to move)</li>
+
+</tbody></table>
+<hr>
+
+<h2>7. Dimension Tools (Parametric Constraints)</h2>
+
+<p>Dimensions control exact size values and are parametric—they can be edited and drive model updates .</p>
+
+<table>
+<thead><tr><th>Ref</th><th>Dimension Type</th><th>Function</th><th>Parameters</th></tr></thead>
+<tbody>
+<tr><td><strong>SK-038</strong>  <strong>Distance Dimension</strong></td><td>Linear distance between two points or line length</td><td>Value (mm), text position</td></tr>
+<tr><td><strong>SK-039</strong>  <strong>Radius Dimension</strong></td><td>Radius of arc or fillet</td><td>Value (mm)</td></tr>
+<tr><td><strong>SK-040</strong>  <strong>Diameter Dimension</strong></td><td>Diameter of circle</td><td>Value (mm)</td></tr>
+<tr><td><strong>SK-041</strong>  <strong>Angle Dimension</strong></td><td>Angle between two lines</td><td>Value (degrees)</td></tr>
+
+<p><strong>Best Practices</strong> :</p>
+<li>Name dimensions descriptively (e.g., <code>hole_offset = 0.1 * width</code>)</li>
+<li>Use expressions to create relationships between parameters</li>
+<li>Fully constrain sketches for predictable updates</li>
+
+<p><strong>Shortcut Key</strong> :</p>
+<li><code>D</code> = Dimension</li>
+
+</tbody></table>
+<hr>
+
+<h2>8. Construction & Reference Tools</h2>
+
+<table>
+<thead><tr><th>Ref</th><th>Tool</th><th>Function</th><th>Visual Indicator</th></tr></thead>
+<tbody>
+<tr><td><strong>SK-042</strong>  <strong>Construction Geometry</strong></td><td>Creates reference geometry that doesn't form profiles</td><td>Dashed/dotted lines</td></tr>
+<tr><td><strong>SK-043</strong>  <strong>Centerline</strong></td><td>Creates axis geometry that participates in profiles</td><td>Dot-dash lines</td></tr>
+<tr><td><strong>SK-044</strong>  <strong>Project</strong></td><td>Projects 3D edges/faces onto current sketch plane</td><td>Projected geometry</td></tr>
+<tr><td><strong>SK-045</strong>  <strong>Project Cut Edges</strong></td><td>Projects intersection of plane with existing bodies</td><td>Intersection curves</td></tr>
+
+<p><strong>Construction vs. Centerline</strong> :</p>
+<li><strong>Construction</strong>: Purely reference—does not affect profiles</li>
+<li><strong>Centerline</strong>: Acts as profile boundary, used for symmetry and revolve axes</li>
+
+</tbody></table>
+<hr>
+
+<h2>9. Inspection & Display Tools</h2>
+
+<table>
+<thead><tr><th>Ref</th><th>Tool</th><th>Function</th></tr></thead>
+<tbody>
+<tr><td><strong>SK-046</strong>  <strong>Measure</strong></td><td>Measures distances between points, edges, or surfaces</td></tr>
+<tr><td><strong>SK-047</strong>  <strong>Sketch Palette</strong></td><td>Controls grids, snaps, profile display, and geometry type</td></tr>
+<tr><td><strong>SK-048</strong>  <strong>Profile Display</strong></td><td>Shows closed profiles with blue highlighting</td></tr>
+<tr><td><strong>SK-049</strong>  <strong>Points Display</strong></td><td>Shows all sketch points to identify gaps</td></tr>
+
+<p><strong>Grid & Snap Options</strong> :</p>
+<li>Grid visibility</li>
+<li>Snap to grid</li>
+<li>Snap points</li>
+
+</tbody></table>
+<hr>
+
+<h2>10. Workflow Summary</h2>
+
+<pre><code>
+<p>1. Create Sketch → Select Plane</p>
+<p>2. Create Geometry (Lines, Circles, etc.)</p>
+<p>3. Apply Constraints (Horizontal, Parallel, Tangent, etc.)</p>
+<p>4. Add Dimensions (Distance, Radius, Angle)</p>
+<p>5. Modify as Needed (Trim, Offset, Fillet, Pattern)</p>
+<p>6. Verify Geometry (Blue = Under-defined → Black = Fully defined)</p>
+<p>7. Finish Sketch</p>
+<p>8. Create 3D Feature (Extrude, Revolve, etc.)</p>
+<pre><code>
+
+<hr>
+
+<h2>11. Common Shortcut Keys</h2>
+
+<table>
+<thead><tr><th>Ref</th><th>Key</th><th>Tool</th></tr></thead>
+<tbody>
+<tr><td><strong>SK-050</strong>  <code>S</code></td><td>Tool Search / Shortcut Menu</td></tr>
+<tr><td><strong>SK-051</strong>  <code>C</code></td><td>Circle</td></tr>
+<tr><td><strong>SK-052</strong>  <code>L</code></td><td>Line</td></tr>
+<tr><td><strong>SK-053</strong>  <code>D</code></td><td>Dimension</td></tr>
+<tr><td><strong>SK-054</strong>  <code>T</code></td><td>Trim</td></tr>
+<tr><td><strong>SK-055</strong>  <code>M</code></td><td>Move</td></tr>
+<tr><td><strong>SK-056</strong>  <code>X</code></td><td>Construction Geometry</td></tr>
+<tr><td><strong>SK-057</strong>  <code>P</code></td><td>Project</td></tr>
+<tr><td><strong>SK-058</strong>  <code>Q</code></td><td>Extrude (exits sketch)</td></tr>
+<tr><td><strong>SK-059</strong>  <code>F</code></td><td>Fillet</td></tr>
+<tr><td><strong>SK-060</strong>  <code>Ctrl+Z</code></td><td>Undo</td></tr>
+
+</tbody></table>
+</body>
+</html>
