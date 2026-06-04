@@ -149,6 +149,15 @@ class IconCMS(QWidget):
         save_btn.clicked.connect(self._save_all)
         hdr.addWidget(save_btn)
 
+        deploy_btn = QPushButton("▶ Deploy to FC")
+        deploy_btn.setStyleSheet(
+            "QPushButton { background: #2e7d32; color: white; padding: 4px 12px;"
+            " border-radius: 4px; font-weight: bold; }"
+            "QPushButton:hover { background: #388e3c; }"
+        )
+        deploy_btn.clicked.connect(self._deploy_to_fc)
+        hdr.addWidget(deploy_btn)
+
         main_layout.addLayout(hdr)
 
         # ─── Main content: tabs ───
@@ -760,6 +769,57 @@ class IconCMS(QWidget):
             count += 1
         QMessageBox.information(self, "Saved",
             f"All {count} icons saved to:\n{ICON_DIR}")
+
+    def _deploy_to_fc(self):
+        """Save icons, rebuild FC, kill old process, launch new one"""
+        # 1. Save all icons
+        count = 0
+        for name, content in self.icons.items():
+            path = os.path.join(ICON_DIR, name)
+            with open(path, "w") as f:
+                f.write(content)
+            count += 1
+
+        # 2. Rebuild FC
+        build_dir = os.path.join(FC_DIR, "build")
+        if not os.path.exists(build_dir):
+            QMessageBox.critical(self, "Error",
+                f"Build dir not found:\n{build_dir}")
+            return
+
+        self.status_label.setText("🔄 Building FissionCAD...")
+        QApplication.processEvents()
+
+        import subprocess, shlex
+        ret = os.system(f"cd {shlex.quote(build_dir)} && cmake .. > /tmp/fc_build.log 2>&1")
+        if ret != 0:
+            QMessageBox.critical(self, "CMake Failed",
+                f"cmake returned {ret}. See /tmp/fc_build.log")
+            self.status_label.setText("❌ Build failed")
+            return
+
+        ret = os.system(f"cd {shlex.quote(build_dir)} && make -j$(nproc) >> /tmp/fc_build.log 2>&1")
+        if ret != 0:
+            QMessageBox.critical(self, "Build Failed",
+                f"make returned {ret}. See /tmp/fc_build.log")
+            self.status_label.setText("❌ Build failed")
+            return
+
+        # 3. Kill old process
+        os.system("pkill -x fission-cad 2>/dev/null")
+
+        # 4. Launch new binary
+        binary = os.path.join(build_dir, "fission-cad")
+        if os.path.exists(binary):
+            import subprocess
+            subprocess.Popen([binary])
+            self.status_label.setText("✅ FC rebuilt & relaunched")
+            QMessageBox.information(self, "Deployed",
+                "FissionCAD rebuilt and launched.")
+        else:
+            self.status_label.setText("❌ Binary not found")
+            QMessageBox.critical(self, "Error",
+                f"Binary not found:\n{binary}")
 
 
 # ── Browser icon widget ──────────────────────────────────────────
